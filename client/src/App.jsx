@@ -16,7 +16,7 @@ const pages = {
   GROUPS: "groups",
 }
 
-const loggedIn = false;
+const loggedIn = true;
 
 function App() {
 
