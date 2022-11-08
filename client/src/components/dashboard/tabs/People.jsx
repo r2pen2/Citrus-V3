@@ -16,7 +16,7 @@ import { UserRelation } from "../../../api/db/objectManagers/userManager";
 
 export default function People() {
 
-  const [sortingFunction, setSortingFunction] = useState(UserRelation.sortByBalance);
+  const [userSort, setUserSort] = useState(UserRelation.sortByBalance);
 
   return (
     <div className="d-flex flex-column gap-10"> 
