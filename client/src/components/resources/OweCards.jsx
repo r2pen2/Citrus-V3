@@ -184,7 +184,7 @@ export function OweOneDirectionPerson({relation, positive}) {
     async function fetchUserData() {
       const relationUserManager = DBManager.getUserManager(relation.user);
       const displayName = await relationUserManager.getDisplayName();
-      const src = await relationUserManager.getPhotoUrl();
+      const src = await relationUserManager.getPfpUrl();
       setUserData({
         displayName: displayName,
         pfpUrl: src

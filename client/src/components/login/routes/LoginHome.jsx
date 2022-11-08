@@ -40,7 +40,7 @@ export default function LoginHome() {
           userManager.setCreatedAt(new Date());
           userManager.setDisplayName(newUser.displayName);
           userManager.setEmail(newUser.email);
-          userManager.setPhotoUrl(newUser.photoURL);
+          userManager.setPfpUrl(newUser.photoURL);
           userManager.setPhoneNumber(null) // We don't know phone number bc we're logging in with google instead
         }
         userManager.push().then(() => {

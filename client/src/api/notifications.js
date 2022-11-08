@@ -4,7 +4,7 @@ import MessageIcon from '@mui/icons-material/Message';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import AlarmIcon from '@mui/icons-material/Alarm';
-import { getPhotoUrlById, getDisplayNameById } from './dbManager';
+import { getPfpUrlById, getDisplayNameById } from './dbManager';
 import { Avatar } from '@mui/material';
 
 /**

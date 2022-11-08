@@ -29,7 +29,7 @@ export function AccountTab() {
         async function fetchUserDetails() {
             const name = await currentUserManager.getDisplayName();
             const number = await currentUserManager.getPhoneNumber();
-            const photo = await currentUserManager.getPhotoUrl();
+            const photo = await currentUserManager.getPfpUrl();
             const initials = await currentUserManager.getInitials();
             setUserDetails({
                 displayName: name ? name : "",

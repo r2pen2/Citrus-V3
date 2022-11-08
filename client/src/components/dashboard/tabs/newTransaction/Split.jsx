@@ -103,7 +103,7 @@ function AddPeoplePage({weightedUsers, setWeightedUsers, setSplitPage, groupPick
             const friendManager = DBManager.getUserManager(currentFriend.id)
             let displayName = await friendManager.getDisplayName();
             currentFriend.displayName = displayName;
-            let url = await friendManager.getPhotoUrl();
+            let url = await friendManager.getPfpUrl();
             currentFriend.pfpUrl = url;
             friendsList[i] = currentFriend;
         }
@@ -383,7 +383,7 @@ function AddPeoplePage({weightedUsers, setWeightedUsers, setSplitPage, groupPick
         for (const user of usersInGroup) {
             const groupUserManager = DBManager.getUserManager(user.id);
             let name = await groupUserManager.getDisplayName();
-            let url = await groupUserManager.getPhotoUrl();
+            let url = await groupUserManager.getPfpUrl();
             loadedUsers.push({id: user.id, displayName: name, selected: true, pfpUrl: url})
         }
         setCurrentGroupUsers(loadedUsers);

@@ -24,7 +24,7 @@ export function HomeFriendsList() {
             let friendsList = [];
             for (const friendId of friendIds) {
                 const friendManager = DBManager.getUserManager(friendId);
-                const pfpUrl = await friendManager.getPhotoUrl();
+                const pfpUrl = await friendManager.getPfpUrl();
                 const displayName = await friendManager.getDisplayName();
                 friendsList.push({
                     id: friendId,

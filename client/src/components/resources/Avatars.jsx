@@ -38,7 +38,7 @@ export function AvatarStackItem(props) {
 
         async function fetchUserData() {
             const userManager = DBManager.getUserManager(props.userId);
-            let photo = await userManager.getPhotoUrl();
+            let photo = await userManager.getPfpUrl();
             setPfpUrl(photo);
             let displayName = await userManager.getDisplayName();
             setName(displayName);
@@ -86,7 +86,7 @@ export function AvatarIcon(props) {
 
         async function fetchUserData() {
             if (!props.src) {
-                let url = await userManager.getPhotoUrl();
+                let url = await userManager.getPfpUrl();
                 setPfpUrl(url);
             }
             if (!props.displayName) {

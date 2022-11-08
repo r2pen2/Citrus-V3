@@ -20,33 +20,24 @@ export class UserManager extends ObjectManager {
     }
     
     fields = {
-        BADGES: "badges",
-        BOOKMARKS: "bookmarks",
         FRIENDS: "friends",
         GROUPS: "groups",
-        TRANSACTIONS: "transactions",
         RELATIONS: "relations",
-        LOCATION: "location",
         CREATEDAT: "createdAt",
         EMAILVERIFIED: "emailVerified",
         LASTLOGINAT: "lastLoginAt",
         DISPLAYNAME: "displayName",
         EMAIL: "email",
         PHONENUMBER: "phoneNumber",
-        PROFILEPICTUREURL: "profilePictureUrl",
-        SETTINGS: "settings",
+        PFPURL: "pfpUrl",
     }
 
     getEmptyData() {
         const empty = {
-            badges: [],                     // {array} IDs of badges that the user has earned
-            bookmarks: [],                  // {array} IDs of bookmarks that the user has created
             friends: [],                    // {array} IDs of friends the user has added
             groups: [],                     // {array} IDs of groups the user is in
-            transactions: [],               // {array} IDs of transactions the user is involved in
             relations: [],                  // {array} List of UserRelations for user
             metadata: {                     // {map} Metadata associated with user
-                location: null,             // --- {geoPoint} Last login location of user
                 createdAt: null,            // --- {date} When the user was created
                 emailVerified: null,        // --- {boolean} Whether or not the user is email verified
                 lastLoginAt: null,          // --- {date} Timestamp of last login
@@ -55,11 +46,7 @@ export class UserManager extends ObjectManager {
                 displayName: null,          // --- {string} User's display name
                 email: null,                // --- {string} User's email address
                 phoneNumber: null,          // --- {PhoneNumber} User's phone number
-                profilePictureUrl: null,    // --- {string} URL of user's profile photo
-            },
-            settings: {                     // {map} User's current settings
-                darkMode: null,             // --- {boolean} Whether the user is in darkMode or not
-                language: null,             // --- {string <- languageId} User's language choice
+                pfpUrl: null,    // --- {string} URL of user's profile photo
             },
         }
         return empty;
@@ -67,16 +54,6 @@ export class UserManager extends ObjectManager {
 
     handleAdd(change, data) {
         switch(change.field) {
-            case this.fields.BADGES:
-                if (!data.badges.includes(change.value)) {    
-                    data.badges.push(change.value);
-                }
-                return data;
-            case this.fields.BOOKMARKS:
-                if (!data.bookmarks.includes(change.value)) {    
-                    data.bookmarks.push(change.value);
-                }
-                return data;
             case this.fields.FRIENDS:
                 if (!data.friends.includes(change.value)) {    
                     data.friends.push(change.value);
@@ -87,23 +64,16 @@ export class UserManager extends ObjectManager {
                     data.groups.push(change.value);
                 }
                 return data;
-            case this.fields.TRANSACTIONS:
-                if (!data.transactions.includes(change.value)) {    
-                    data.transactions.push(change.value);
-                }
-                return data;
             case this.fields.RELATIONS:
                 data.relations.push(change.value.toJson());
                 return data;
-            case this.fields.LOCATION:
             case this.fields.CREATEDAT:
             case this.fields.EMAILVERIFIED:
             case this.fields.LASTLOGINAT:
             case this.fields.DISPLAYNAME:
             case this.fields.EMAIL:
             case this.fields.PHONENUMBER:
-            case this.fields.PROFILEPICTUREURL:
-            case this.fields.SETTINGS:
+            case this.fields.PFPURL:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -114,33 +84,22 @@ export class UserManager extends ObjectManager {
 
     handleRemove(change, data) {
         switch(change.field) {
-            case this.fields.BADGES:
-                data.badges = data.badges.filter(badge => badge !== change.value);
-                return data;
-            case this.fields.BOOKMARKS:
-                data.bookmarks = data.bookmarks.filter(bookmark => bookmark !== change.value);
-                return data;
             case this.fields.FRIENDS:
                 data.friends = data.friends.filter(friend => friend !== change.value);
                 return data;
             case this.fields.GROUPS:
                 data.groups = data.groups.filter(group => group !== change.value);
                 return data;
-            case this.fields.TRANSACTIONS:
-                data.transactions = data.transactions.filter(transaction => transaction !== change.value);
-                return data;
             case this.fields.RELATIONS:
                 data.relations = data.relations.filter(relation => relation.user !== change.value);
                 return data;
-            case this.fields.LOCATION:
             case this.fields.CREATEDAT:
             case this.fields.EMAILVERIFIED:
             case this.fields.LASTLOGINAT:
             case this.fields.DISPLAYNAME:
             case this.fields.EMAIL:
             case this.fields.PHONENUMBER:
-            case this.fields.PROFILEPICTUREURL:
-            case this.fields.SETTINGS:
+            case this.fields.PFPURL:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -151,9 +110,6 @@ export class UserManager extends ObjectManager {
 
     handleSet(change, data) {
         switch(change.field) {
-            case this.fields.LOCATION:
-                data.metadata.location = change.value;
-                return data;
             case this.fields.CREATEDAT:
                 data.metadata.createdAt = change.value;
                 return data;
@@ -172,17 +128,11 @@ export class UserManager extends ObjectManager {
             case this.fields.PHONENUMBER:
                 data.personalData.phoneNumber = change.value;
                 return data;
-            case this.fields.PROFILEPICTUREURL:
-                data.personalData.profilePictureUrl = change.value;
+            case this.fields.PFPURL:
+                data.personalData.pfpUrl = change.value;
                 return data;
-            case this.fields.SETTINGS:
-                data.settings = change.value;
-                return data;
-            case this.fields.BADGES:
-            case this.fields.BOOKMARKS:
             case this.fields.FRIENDS:
             case this.fields.GROUPS:
-            case this.fields.TRANSACTIONS:
             case this.fields.RELATIONS:
                 super.logInvalidChangeType(change);
                 return data;
@@ -198,9 +148,6 @@ export class UserManager extends ObjectManager {
                 await super.fetchData();
             }
             switch(field) {
-                case this.fields.LOCATION:
-                    resolve(this.data.metadata.location);
-                    break;
                 case this.fields.CREATEDAT:
                     resolve(this.data.metadata.createdAt);
                     break;
@@ -219,31 +166,19 @@ export class UserManager extends ObjectManager {
                 case this.fields.PHONENUMBER:
                     resolve(this.data.personalData.phoneNumber);
                     break;
-                case this.fields.PROFILEPICTUREURL:
-                    if (this.data.personalData.profilePictureUrl) {
+                case this.fields.PFPURL:
+                    if (this.data.personalData.pfpUrl) {
                         resolve(this.data.personalData.profilePictureUrl);
                         break;
                     } else {
                         resolve("https://robohash.org/" + this.documentId);
                         break;
                     }
-                case this.fields.SETTINGS:
-                    resolve(this.data.settings);
-                    break;
-                case this.fields.BADGES:
-                    resolve(this.data.badges);
-                    break;
-                case this.fields.BOOKMARKS:
-                    resolve(this.data.bookmarks);
-                    break;
                 case this.fields.FRIENDS:
                     resolve(this.data.friends);
                     break;
                 case this.fields.GROUPS:
                     resolve(this.data.groups);
-                    break;
-                case this.fields.TRANSACTIONS:
-                    resolve(this.data.transactions);
                     break;
                 case this.fields.RELATIONS:
                     let relationArray = [];
@@ -262,21 +197,6 @@ export class UserManager extends ObjectManager {
     }
 
     // ================= Get Operations ================= //
-    async getBadges() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.BADGES).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getBookmarks() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.BOOKMARKS).then((val) => {
-                resolve(val);
-            })
-        })
-    }
 
     async getFriends() {
         return new Promise(async (resolve, reject) => {
@@ -289,22 +209,6 @@ export class UserManager extends ObjectManager {
     async getGroups() {
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.GROUPS).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getTransactions() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.TRANSACTIONS).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getLocation() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.LOCATION).then((val) => {
                 resolve(val);
             })
         })
@@ -358,17 +262,9 @@ export class UserManager extends ObjectManager {
         })
     }
 
-    async getPhotoUrl() {
+    async getPfpUrl() {
         return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.PROFILEPICTUREURL).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getSettings() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.SETTINGS).then((val) => {
+            this.handleGet(this.fields.pfpUrl).then((val) => {
                 resolve(val);
             })
         })
@@ -419,11 +315,6 @@ export class UserManager extends ObjectManager {
     }
 
     // ================= Set Operations ================= //
-    setLocation(newLocation) {
-        const locationChange = new Set(this.fields.LOCATION, newLocation);
-        super.addChange(locationChange);
-    }
-    
     setCreatedAt(newCreatedAt) {
         const createdAtChange = new Set(this.fields.CREATEDAT, newCreatedAt);
         super.addChange(createdAtChange);
@@ -454,27 +345,12 @@ export class UserManager extends ObjectManager {
         super.addChange(phoneNumberChange);
     }
     
-    setPhotoUrl(newProfilePictureUrl) {
+    setPfpUrl(newProfilePictureUrl) {
         const photoUrlChange = new Set(this.fields.PROFILEPICTUREURL, newProfilePictureUrl);
         super.addChange(photoUrlChange);
     }
-    
-    setSettings(newSettings) {
-        const settingsChange = new Set(this.fields.SETTINGS, newSettings);
-        super.addChange(settingsChange);
-    }
 
     // ================= Add Operations ================= //
-    addBadge(badgeId) {
-        const badgeAddition = new Add(this.fields.BADGES, badgeId);
-        super.addChange(badgeAddition);
-    }
-
-    addBookmark(bookmarkId) {
-        const bookmarkAddition = new Add(this.fields.BOOKMARKS, bookmarkId);
-        super.addChange(bookmarkAddition);
-    }
-    
     addFriend(friendId) {
         const friendAddition = new Add(this.fields.FRIENDS, friendId);
         super.addChange(friendAddition);
@@ -483,11 +359,6 @@ export class UserManager extends ObjectManager {
     addGroup(groupId) {
         const groupAddition = new Add(this.fields.GROUPS, groupId);
         super.addChange(groupAddition);
-    }
-
-    addTransaction(transactionId) {
-        const transactionAddition = new Add(this.fields.TRANSACTIONS, transactionId);
-        super.addChange(transactionAddition);
     }
 
     addRelation(relation) {
@@ -531,16 +402,6 @@ export class UserManager extends ObjectManager {
     }
 
     // ================= Remove Operations ================= //
-    removeBadge(badgeId) {
-        const badgeRemoval = new Remove(this.fields.BADGES, badgeId);
-        super.addChange(badgeRemoval);
-    }
-
-    removeBookmark(bookmarkId) {
-        const bookmarkRemoval = new Remove(this.fields.BOOKMARKS, bookmarkId);
-        super.addChange(bookmarkRemoval);
-    }
-    
     removeFriend(friendId) {
         const friendRemoval = new Remove(this.fields.FRIENDS, friendId);
         super.addChange(friendRemoval);
@@ -549,11 +410,6 @@ export class UserManager extends ObjectManager {
     removeGroup(groupId) {
         const groupRemoval = new Remove(this.fields.GROUPS, groupId);
         super.addChange(groupRemoval);
-    }
-
-    removeTransaction(transactionId) {
-        const transactionRemoval = new Remove(this.fields.TRANSACTIONS, transactionId);
-        super.addChange(transactionRemoval);
     }
 
     removeRelation(relationUserId) {
@@ -788,23 +644,12 @@ export class UserManager extends ObjectManager {
     }
 }
 
-export class UserPhoneNumber {
-    constructor(_phoneString) {
-        this.phoneString = _phoneString;
-    }
-}
-
-export class UserEmail {
-    constructor(_emailString) {
-        this.emailString = _emailString;
-    }
-}
-
 export class UserRelation {
-    constructor(_userId, _data) {
-        this.user = _userId;
-        this.amount = _data ? _data.amount : 0;
-        this.history = _data ? _data.history : [];
+    constructor(_userRelation) {
+        this.balance = _userRelation ? _userRelation.balance : 0;
+        this.numTransactions = _userRelation ? _userRelation.numTransactions : 0;
+        this.history = _userRelation ? _userRelation.history : [];
+        this.lastInteracted = _userRelation ? _userRelation.lastInteracted : new Date();
     }
 
     addHistory(history) {
@@ -838,55 +683,50 @@ export class UserRelation {
 
     toJson() {
         return {
-            user: this.user,
-            amount: this.amount,
+            balance: this.balance,
+            numTransactions: this.numTransactions,
             history: this.history,
+            lastInteracted: this.lastInteracted,
         }
     }
 }
 
 export class UserRelationHistory {
     constructor(_userRelationHistory) {
-        this.transactionId = _userRelationHistory ? _userRelationHistory.transactionId : null;
-        this.transactionTitle = _userRelationHistory ? _userRelationHistory.transactionTitle : null;
-        this.amountChange = _userRelationHistory ? _userRelationHistory.amountChange : null;
-        this.date = _userRelationHistory ? _userRelationHistory.date : new Date();
-        this.settled = _userRelationHistory ? _userRelationHistory.settled : false;
+        this.paymentType = _userRelationHistory ? _userRelationHistory.paymentType : null;      // "Currency" used in this exchange (USD? BEER? PIZZA?)
+        this.amount = _userRelationHistory ? _userRelationHistory.amount : null;                // How many of that currency was used in this exchange
+        this.transaction = _userRelationHistory ? _userRelationHistory.transaction : null;      // ID of this exchange's transaction
+        this.group = _userRelationHistory ? _userRelationHistory.group : false;             // ID of this exchange's group (if applicabale)
+        this.date = _userRelationHistory ? _userRelationHistory.date : new Date();              // When this exchange occured
     }
 
-    setTranscationId(id) {
-        this.transactionId = id;
+    setTransaction(transactionId) {
+        this.transaction = transactionId;
     }
 
-    setTransactionTitle(title) {
-        this.transactionTitle = title;
+    setPaymentType(paymentType) {
+        this.paymentType = paymentType;
     }
 
-    setAmountChange(amt) {
-        this.amountChange = amt;
+    setAmount(amt) {
+        this.amount = amt;
     }
 
-    setSettled(settled) {
-        this.settled = settled;
+    setGroup(groupId) {
+        this.group = groupId;
+    }
+
+    setDate(date) {
+        this.date = date;
     }
     
     toJson() {
         return {
-            transactionId: this.transactionId,
-            transactionTitle: this.transactionTitle,
-            amountChange: this.amountChange,
+            paymentType: this.paymentType,
+            amount: this.amount,
+            transaction: this.transcation,
+            group: this.group,
             date: this.date,
-            settled: this.settled,
         }
-    }
-
-    getDescription() {
-        if (this.transactionId) {
-            if (this.settled) {
-                return `Settled transaction: ${this.transactionTitle}`;
-            }
-            return `Requested for transaction: ${this.transactionTitle}`;
-        }
-        return "Settled outside of a transaction";
     }
 }

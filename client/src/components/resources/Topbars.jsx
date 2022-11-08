@@ -99,7 +99,7 @@ export function UserTopbar() {
     // Fetch user details on mount
     async function fetchUserData() {
       let name = await currentUserManager.getDisplayName();
-      let url = await currentUserManager.getPhotoUrl();
+      let url = await currentUserManager.getPfpUrl();
       let userInitials = await currentUserManager.getInitials();
       setCurrentUserDetails({
         displayName: name,
