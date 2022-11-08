@@ -1,0 +1,12 @@
+.bg-green {
+    background-color: #bfd67950;
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.test-border {
+    border: 2px solid red;
+}

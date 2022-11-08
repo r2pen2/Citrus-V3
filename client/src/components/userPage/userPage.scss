@@ -1,0 +1,44 @@
+.user-settings-wrapper {
+    $drawer-width: 200px;
+    align-items: center;
+    justify-content: center;
+    height: 93vh;
+    display: flex;
+    flex-direction: column;
+    background-image: url('../../assets/svg/waveOrange2.svg');
+    background-size: 100vw;
+    background-repeat: no-repeat;
+    background-position: bottom;
+
+    .settings-content {
+        // Used to set paper size
+        margin-top: 7vh;
+        padding-top: 20px;
+        transform: translate(0, -60px);
+        width: 40vw;
+        height: 70vh;
+        display: flex;
+    
+        .side-drawer {
+            width: $drawer-width;
+
+            .drawer-paper {
+                width: $drawer-width;
+            }
+
+            .active {
+                background: #f4f4f4;
+                border-left: 3px solid #B0C856;
+            }
+        }
+    }
+
+    .unimplemented {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+}

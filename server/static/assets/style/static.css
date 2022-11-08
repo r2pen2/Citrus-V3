@@ -1,0 +1,14 @@
+body, ul {
+    margin: 0;
+    padding: 0;
+    zoom: reset;
+}
+
+.under-construction-page {
+    height: 100vh;
+    width: 100vw;
+    background-image: url("../images/blobs1.svg");
+    background-position: bottom left;
+    background-repeat: no-repeat;
+    background-size: cover;
+}

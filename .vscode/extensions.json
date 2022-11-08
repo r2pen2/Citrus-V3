@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "tabnine.tabnine-vscode",
+        "burkeholland.simple-react-snippets",
+        "esbenp.prettier-vscode",
+        "mhutchie.git-graph",
+        "dbaeumer.vscode-eslint",
+        "dsznajder.es7-react-js-snippets"
+    ]
+}
