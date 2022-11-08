@@ -1,9 +1,8 @@
-import { DBManager, Add, Remove, Set } from "../dbManager";
+import { DBManager, Add, Remove, Set, Update } from "../dbManager";
 import { ObjectManager } from "./objectManager";
 import { TransactionRelation } from "./transactionManager";
 import { SessionManager } from "../../sessionManager";
 import { sortByDate } from "../../sorting";
-import { getDateString } from "../../strings";
 
 /**
  * Object Manager for users
@@ -36,7 +35,7 @@ export class UserManager extends ObjectManager {
         const empty = {
             friends: [],                    // {array} IDs of friends the user has added
             groups: [],                     // {array} IDs of groups the user is in
-            relations: [],                  // {array} List of UserRelations for user
+            relations: new Map(),           // {map} Map of userIds and their respective relations
             metadata: {                     // {map} Metadata associated with user
                 createdAt: null,            // --- {date} When the user was created
                 emailVerified: null,        // --- {boolean} Whether or not the user is email verified
@@ -52,6 +51,28 @@ export class UserManager extends ObjectManager {
         return empty;
     }
 
+    handleUpdate(change, data) {
+        switch(change.field) {
+            case this.fields.RELATIONS:
+                data.relations.set(change.key, change.value);
+                return data;
+            case this.fields.FRIENDS:
+            case this.fields.GROUPS:
+            case this.fields.CREATEDAT:
+            case this.fields.EMAILVERIFIED:
+            case this.fields.LASTLOGINAT:
+            case this.fields.DISPLAYNAME:
+            case this.fields.EMAIL:
+            case this.fields.PHONENUMBER:
+            case this.fields.PFPURL:
+                super.logInvalidChangeType(change);
+                return data;
+            default:
+                super.logInvalidChangeField(change);
+                return data;
+        }
+    }
+
     handleAdd(change, data) {
         switch(change.field) {
             case this.fields.FRIENDS:
@@ -65,8 +86,6 @@ export class UserManager extends ObjectManager {
                 }
                 return data;
             case this.fields.RELATIONS:
-                data.relations.push(change.value.toJson());
-                return data;
             case this.fields.CREATEDAT:
             case this.fields.EMAILVERIFIED:
             case this.fields.LASTLOGINAT:
@@ -91,7 +110,7 @@ export class UserManager extends ObjectManager {
                 data.groups = data.groups.filter(group => group !== change.value);
                 return data;
             case this.fields.RELATIONS:
-                data.relations = data.relations.filter(relation => relation.user !== change.value);
+                data.relations.delete(change.value);
                 return data;
             case this.fields.CREATEDAT:
             case this.fields.EMAILVERIFIED:
@@ -350,6 +369,12 @@ export class UserManager extends ObjectManager {
         super.addChange(photoUrlChange);
     }
 
+    // ================= Update Operation ================= // 
+    updateRelation(key, relation) {
+        const relationUpdate = new Update(this.fields.RELATIONS, key, relation);
+        super.addChange(relationUpdate);
+    }
+
     // ================= Add Operations ================= //
     addFriend(friendId) {
         const friendAddition = new Add(this.fields.FRIENDS, friendId);
@@ -359,11 +384,6 @@ export class UserManager extends ObjectManager {
     addGroup(groupId) {
         const groupAddition = new Add(this.fields.GROUPS, groupId);
         super.addChange(groupAddition);
-    }
-
-    addRelation(relation) {
-        const relationAddition = new Add(this.fields.RELATIONS, relation);
-        super.addChange(relationAddition);
     }
 
     async addRelationsFromTransaction(transactionManager) {

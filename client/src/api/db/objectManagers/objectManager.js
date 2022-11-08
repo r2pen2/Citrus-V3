@@ -82,6 +82,8 @@ export class ObjectManager {
                         case Change.changeTypes.SET:
                             this.data = this.handleSet(change, this.data);
                             break;
+                        case Change.changeTypes.UPDATE:
+                            this.data = this.handleUpdate(change, this.data);
                         default:
                             this.debugger.logWithPrefix("Invalid change type when trying to apply changes!");
                             break;

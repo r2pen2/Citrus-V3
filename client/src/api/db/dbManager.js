@@ -23,6 +23,7 @@ export class Change {
         SET: "set",
         REMOVE: "remove",
         ADD: "add",
+        UPDATE: "update",
     };
 
     constructor(_type, _field, _value) {
@@ -73,6 +74,16 @@ export class Remove extends Change {
 export class Add extends Change {
     constructor(_field, _newValue) {
         super(Change.changeTypes.ADD, _field, _newValue);
+    }
+}
+
+/**
+ * A Change object for updating a key in a map 
+ */
+export class Update extends Change {
+    constructor(_field, _newKey, _newValue) {
+        super(Change.changeTypes.UPDATE, _field, _newValue);
+        this.key = _newKey;
     }
 }
 
