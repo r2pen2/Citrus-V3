@@ -1,49 +1,53 @@
 // Library imports
-import { Button } from "@mui/material";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 // Component imports
-import { DashboardOweCards } from "../../resources/OweCards";
-import { TransactionList } from "../../resources/Transactions";
 import { Breadcrumbs } from "../../resources/Navigation";
-import { SectionTitle } from "../../resources/Labels";
-import { HomeFriendsList } from "../../resources/Friends";
-import { HomeGroupList } from "../../resources/Groups";
-import { SortSelector } from "../../resources/PeopleResources";
+import { SortSelector, PeopleList } from "../../resources/PeopleResources";
 
 // API imports
-import { RouteManager } from "../../../api/routeManager";
+import { SessionManager } from "../../../api/sessionManager";
 import { UserRelation } from "../../../api/db/objectManagers/userManager";
+
+const currentUserManager = SessionManager.getCurrentUserManager();
 
 export default function People() {
 
-  const [userSort, setUserSort] = useState(UserRelation.sortByBalance);
+  const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE);
+  const [relations, setRelations] = useState({
+      friends: [],
+      others: [],
+  });
+  
+  useEffect(() => {
+      async function fetchRelations() {
+          await currentUserManager.fetchData();
+          const allRelations = await currentUserManager.getRelations();
+          const friendsList = await currentUserManager.getFriends();
+          const friends = [];
+          const others = [];
+          Object.entries(allRelations).forEach(([key, value]) => {
+              const listItem = value;
+              listItem["userId"] = key;
+              if (friendsList.includes(key)) {
+                  friends.push(listItem);
+              } else {
+                  others.push(listItem);
+              }
+          })
+          setRelations({
+              friends: friends,
+              others: others,
+          })
+      }
+      fetchRelations();
+  }, []);
 
   return (
     <div className="d-flex flex-column gap-10"> 
       <Breadcrumbs path="Dashboard/People" />
-      <SortSelector />
-      <DashboardOweCards />
-      <div>
-        <SectionTitle title="Recent Transactions">
-          <Button variant="contained" onClick={() => RouteManager.redirectWithHash("dashboard", "transactions")}>View All Transactions</Button>
-        </SectionTitle>
-        <TransactionList
-          numDisplayed={5}
-        />
-      </div>
-      <div>
-        <SectionTitle title="Friends">
-          <Button variant="contained" onClick={() => RouteManager.redirectWithHash("dashboard", "friends")}>Add Friends</Button>
-        </SectionTitle>
-        <HomeFriendsList />
-      </div>
-      <div>
-        <SectionTitle title="Groups">
-          <Button variant="contained" onClick={() => RouteManager.redirect("/dashboard/groups/add")}>Add Groups</Button>
-        </SectionTitle>
-        <HomeGroupList />
-      </div>
+      <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme}/>
+      <PeopleList sortingScheme={sortingScheme} relations={relations} />
     </div>
   );
 }

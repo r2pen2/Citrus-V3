@@ -187,7 +187,7 @@ export class UserManager extends ObjectManager {
                     break;
                 case this.fields.PFPURL:
                     if (this.data.personalData.pfpUrl) {
-                        resolve(this.data.personalData.profilePictureUrl);
+                        resolve(this.data.personalData.pfpUrl);
                         break;
                     } else {
                         resolve("https://robohash.org/" + this.documentId);
@@ -200,12 +200,7 @@ export class UserManager extends ObjectManager {
                     resolve(this.data.groups);
                     break;
                 case this.fields.RELATIONS:
-                    let relationArray = [];
-                    for (const jsonRelation of this.data.relations) {
-                        const rel = new UserRelation(jsonRelation.user, jsonRelation);
-                        relationArray.push(rel)
-                    }
-                    resolve(relationArray);
+                    resolve(this.data.relations);
                     break;
                 default:
                     super.logInvalidGetField(field);
@@ -283,7 +278,7 @@ export class UserManager extends ObjectManager {
 
     async getPfpUrl() {
         return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.pfpUrl).then((val) => {
+            this.handleGet(this.fields.PFPURL).then((val) => {
                 resolve(val);
             })
         })
@@ -765,7 +760,7 @@ export class UserRelation {
         return userRelationArray;
     }
 
-    static soryByLastInteracted(userRelationArray) {
+    static sortByLastInteracted(userRelationArray) {
         if (!userRelationArray) {
             return userRelationArray;
         }
@@ -775,11 +770,36 @@ export class UserRelation {
         return userRelationArray;
     }
 
-    static soryByNumTransactions(userRelationArray) {
+    static sortByNumTransactions(userRelationArray) {
         userRelationArray.sort((a, b) => {
             return b.numTransactions - a.numTransactions;
         });
         return userRelationArray;
+    }
+
+    static applySort(scheme, array) {
+        switch (scheme) {
+            case this.sortingSchemes.BALANCE:
+                return this.sortByBalance(array);
+            case this.sortingSchemes.NUMTRANSACTIONS:
+                return this.sortByNumTransactions(array);
+            case this.sortingSchemes.LASTINTERACTED:
+                return this.sortByLastInteracted(array);
+            case this.sortingSchemes.DISPLAYNAME:
+                return this.sortByDisplayName(array);
+            case this.sortingSchemes.ABSOLUTEVALUE:
+                return this.sortByAbsoluteValue(array);
+            default:
+                return array;
+        }
+    }
+
+    static sortingSchemes = {
+        BALANCE: "balance",
+        NUMTRANSACTIONS: "numTransactions",
+        LASTINTERACTED: "lastInteracted",
+        DISPLAYNAME: "displayName",
+        ABSOLUTEVALUE: "absoluteValue"
     }
 }
 
