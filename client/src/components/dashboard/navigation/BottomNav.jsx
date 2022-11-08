@@ -1,7 +1,7 @@
 // Library imports
 import { useState } from 'react';
 import { AppBar, BottomNavigation, BottomNavigationAction } from "@mui/material"
-import HomeIcon from '@mui/icons-material/Home';
+import PersonIcon from '@mui/icons-material/Person';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import GroupsIcon from '@mui/icons-material/Groups';
 
@@ -62,9 +62,9 @@ export default function BottomNav({ setShortcutActive, setBookmarksDeployed }) {
       <AppBar position="fixed" color="primary" sx={{ top: 'auto', bottom: 0 }} data-testid="bottomnav">
         <BottomNavigation sx={{ widthi: '100%' }} value={value} onChange={handleChange}>
           <BottomNavigationAction
-            label="Home"
-            value="home"
-            icon={<HomeIcon fontSize="large" sx={{ color: "#F2DF56" }}/>}
+            label="People"
+            value="people"
+            icon={<PersonIcon fontSize="large" sx={{ color: "#F2DF56" }}/>}
           />
           <BottomNavigationAction
             label="New Transaction"
