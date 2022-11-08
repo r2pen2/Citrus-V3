@@ -9,6 +9,7 @@ import { Breadcrumbs } from "../../resources/Navigation";
 import { SectionTitle } from "../../resources/Labels";
 import { HomeFriendsList } from "../../resources/Friends";
 import { HomeGroupList } from "../../resources/Groups";
+import { SortSelector } from "../../resources/PeopleResources";
 
 // API imports
 import { RouteManager } from "../../../api/routeManager";
@@ -21,6 +22,7 @@ export default function People() {
   return (
     <div className="d-flex flex-column gap-10"> 
       <Breadcrumbs path="Dashboard/People" />
+      <SortSelector />
       <DashboardOweCards />
       <div>
         <SectionTitle title="Recent Transactions">

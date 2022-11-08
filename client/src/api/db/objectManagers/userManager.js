@@ -720,6 +720,9 @@ export class UserRelation {
     }
 
     static sortByBalance(userRelationArray) {
+        if (!userRelationArray) {
+            return userRelationArray;
+        }
         userRelationArray.sort((a, b) => {
             return b.balance - a.balance;
         });
@@ -737,6 +740,9 @@ export class UserRelation {
     }
 
     static sortByAbsoluteValue(userRelationArray) {
+        if (!userRelationArray) {
+            return userRelationArray;
+        }
         userRelationArray.sort((a, b) => {
             return Math.abs(b.balance) - Math.abs(a.balance);
         });
@@ -744,6 +750,9 @@ export class UserRelation {
     }
 
     static sortByDisplayName(userRelationArray) {
+        if (!userRelationArray) {
+            return userRelationArray;
+        }
         userRelationArray.sort((a, b) => {
             if (a.displayName < b.displayName) {
                 return -1;
@@ -757,6 +766,9 @@ export class UserRelation {
     }
 
     static soryByLastInteracted(userRelationArray) {
+        if (!userRelationArray) {
+            return userRelationArray;
+        }
         userRelationArray.sort((a, b) => {
             return new Date(b.lastInteracted) - new Date(a.lastInteracted);
         });
