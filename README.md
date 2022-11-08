@@ -22,9 +22,10 @@ Here's a list of extensions that I recommend installing:
 - [Simple React Snippets](https://marketplace.visualstudio.com/items?itemName=burkeholland.simple-react-snippets) Auto-generate React code with shortcuts.
 - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) Basic code formatter.
 - [Git Graph](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph) View a Git Graph of your repository, and perform Git actions from the graph.
+- [GitLens — Git supercharged](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens) Visualize code authorship at a glance via Git blame annotations and CodeLens, seamlessly navigate and explore Git repositories, gain valuable insights via rich visualizations and powerful comparison commands, and so much more.
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) Integrates ESLint JavaScript into VS Code.
 - [ES7+ React/Redux/React Native Snippets](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets) React snippets that integrate with Prettier.
-
+- [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) Colored highlighting for different comment types (todos, important, questions, etc.).
 ### Best Practices
 
 ##### File Types
