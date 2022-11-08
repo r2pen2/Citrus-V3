@@ -1,5 +1,6 @@
 // Library imports
 import { Button } from "@mui/material";
+import { useState } from "react"
 
 // Component imports
 import { DashboardOweCards } from "../../resources/OweCards";
@@ -11,8 +12,11 @@ import { HomeGroupList } from "../../resources/Groups";
 
 // API imports
 import { RouteManager } from "../../../api/routeManager";
+import { UserRelation } from "../../../api/db/objectManagers/userManager";
 
 export default function People() {
+
+  const [sortingFunction, setSortingFunction] = useState(UserRelation.sortByBalance);
 
   return (
     <div className="d-flex flex-column gap-10"> 

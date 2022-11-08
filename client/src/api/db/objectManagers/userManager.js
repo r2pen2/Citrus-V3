@@ -670,10 +670,13 @@ export class UserRelation {
         this.numTransactions = _userRelation ? _userRelation.numTransactions : 0;
         this.history = _userRelation ? _userRelation.history : [];
         this.lastInteracted = _userRelation ? _userRelation.lastInteracted : new Date();
+        this.displayName = _userRelation ? _userRelation.displayName : null;
     }
 
     addHistory(history) {
-        this.amount = this.amount += history.amountChange;
+        this.balance = this.balance += history.amount;
+        this.numTransactions++;
+        this.lastInteracted = new Date();
         this.history.push(history.toJson());
     }
 
@@ -695,10 +698,15 @@ export class UserRelation {
             if (h.transactionId === transactionId) {
                 // This is the entry to remove
                 this.history = this.history.filter(entry => entry.transactionId !== transactionId);
-                this.amount = this.amount - h.amountChange;
+                this.balance = this.balance - h.amount;
                 break;
             }
         }
+        this.numTransactions--;
+    }
+
+    setDisplayName(displayName) {
+        this.displayName = displayName;
     }
 
     toJson() {
@@ -707,7 +715,59 @@ export class UserRelation {
             numTransactions: this.numTransactions,
             history: this.history,
             lastInteracted: this.lastInteracted,
+            displayName: this.displayName,
         }
+    }
+
+    static sortByBalance(userRelationArray) {
+        userRelationArray.sort((a, b) => {
+            return b.balance - a.balance;
+        });
+        // Separate into two arrays and spit zeros out at the bottom
+        let topArray = [];
+        let bottomArray = [];
+        for (const userRelation of userRelationArray) {
+            if (userRelation.balance !== 0) {
+                topArray.push(userRelation);
+            } else {
+                bottomArray.push(userRelation);
+            }
+        }
+        return topArray.concat(bottomArray);
+    }
+
+    static sortByAbsoluteValue(userRelationArray) {
+        userRelationArray.sort((a, b) => {
+            return Math.abs(b.balance) - Math.abs(a.balance);
+        });
+        return userRelationArray;
+    }
+
+    static sortByDisplayName(userRelationArray) {
+        userRelationArray.sort((a, b) => {
+            if (a.displayName < b.displayName) {
+                return -1;
+            }
+            if (a.displayName > b.displayName) {
+                return 1;
+            }
+            return 0;
+        });
+        return userRelationArray;
+    }
+
+    static soryByLastInteracted(userRelationArray) {
+        userRelationArray.sort((a, b) => {
+            return new Date(b.lastInteracted) - new Date(a.lastInteracted);
+        });
+        return userRelationArray;
+    }
+
+    static soryByNumTransactions(userRelationArray) {
+        userRelationArray.sort((a, b) => {
+            return b.numTransactions - a.numTransactions;
+        });
+        return userRelationArray;
     }
 }
 
@@ -716,7 +776,7 @@ export class UserRelationHistory {
         this.paymentType = _userRelationHistory ? _userRelationHistory.paymentType : null;      // "Currency" used in this exchange (USD? BEER? PIZZA?)
         this.amount = _userRelationHistory ? _userRelationHistory.amount : null;                // How many of that currency was used in this exchange
         this.transaction = _userRelationHistory ? _userRelationHistory.transaction : null;      // ID of this exchange's transaction
-        this.group = _userRelationHistory ? _userRelationHistory.group : false;             // ID of this exchange's group (if applicabale)
+        this.group = _userRelationHistory ? _userRelationHistory.group : false;                 // ID of this exchange's group (if applicabale)
         this.date = _userRelationHistory ? _userRelationHistory.date : new Date();              // When this exchange occured
     }
 
