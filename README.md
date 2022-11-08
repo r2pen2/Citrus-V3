@@ -12,7 +12,6 @@
 ## Meet Development Team
 
 ### Lead Software Developer ([Joe Dobbelaar](https://github.com/r2pen2))
-Something about the two of us...
 
 # Developer Manual
 
