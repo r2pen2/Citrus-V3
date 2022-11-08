@@ -8,13 +8,12 @@ import { useState, useEffect } from 'react'
 
 // Component imports
 import BottomNav from "./navigation/BottomNav";
-import Home from "./tabs/Home";
+import People from "./tabs/People";
 import NewTransaction from "./tabs/NewTransaction";
 import Shortcut from "./tabs/Shortcut";
 import UserGroups from "./tabs/UserGroups";
 import OweOneDirection from "./tabs/OweOneDirection";
 import AllTransactions from "./tabs/AllTransactions";
-import Analytics from "./tabs/Analytics";
 import Bookmarks from "./tabs/Bookmarks";
 import Transaction from "./routes/Transaction";
 import Groups from "./routes/Groups";
@@ -76,8 +75,8 @@ export default function Dashboard() {
 
   function renderTab() {
     switch(activeTab) {
-      case "home":
-        return <Home />;
+      case "people":
+        return <People />;
       case "new-transaction":
         return <NewTransaction />;
       case "bookmarks":
@@ -90,10 +89,8 @@ export default function Dashboard() {
         return <OweOneDirection positive={false}/>;
       case "transactions":
         return <AllTransactions />;
-      case "analytics":
-        return <Analytics />;
       default:
-        return <Home />;
+        return <People />;
     }
   }
   
