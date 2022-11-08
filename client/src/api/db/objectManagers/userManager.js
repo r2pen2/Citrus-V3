@@ -35,7 +35,7 @@ export class UserManager extends ObjectManager {
         const empty = {
             friends: [],                    // {array} IDs of friends the user has added
             groups: [],                     // {array} IDs of groups the user is in
-            relations: new Map(),           // {map} Map of userIds and their respective relations
+            relations: {},                  // {map} Map of userIds and their respective relations
             metadata: {                     // {map} Metadata associated with user
                 createdAt: null,            // --- {date} When the user was created
                 emailVerified: null,        // --- {boolean} Whether or not the user is email verified
@@ -54,7 +54,7 @@ export class UserManager extends ObjectManager {
     handleUpdate(change, data) {
         switch(change.field) {
             case this.fields.RELATIONS:
-                data.relations.set(change.key, change.value);
+                data.relations[change.key] = change.value;
                 return data;
             case this.fields.FRIENDS:
             case this.fields.GROUPS:
@@ -110,7 +110,7 @@ export class UserManager extends ObjectManager {
                 data.groups = data.groups.filter(group => group !== change.value);
                 return data;
             case this.fields.RELATIONS:
-                data.relations.delete(change.value);
+                delete data.relations[change.value];
                 return data;
             case this.fields.CREATEDAT:
             case this.fields.EMAILVERIFIED:

@@ -1,11 +1,7 @@
-import { BadgeManager } from "./objectManagers/badgeManager";
-import { BookmarkManager } from "./objectManagers/bookmarkManager";
 import { GroupManager } from "./objectManagers/groupManager";
-import { TransactionAttemptManager } from "./objectManagers/transactionAttemptManager";
 import { TransactionManager } from "./objectManagers/transactionManager";
 import { UserManager } from "./objectManagers/userManager";
 import { InvitationManager } from "./objectManagers/invitationManager";
-import { SessionPasswordManager } from "./objectManagers/sessionPasswordManager";
 import { Debugger } from "../debugger";
 
 // Create debugger for DBManager
@@ -97,14 +93,10 @@ export class DBManager {
      * All possible types for ObjectManagers
      */
     static objectTypes = {
-        BOOKMARK: "bookmark",
         INVITATION: "invitations",
         GROUP: "group",
-        TRANSACTIONATTEMPT: "transactionAttempt",
         TRANSACTION: "transaction",
         USER: "user",
-        BADGE: "badge",
-        SESSIONPASSWORD: "sessionPassword",
     }
 
     /**
@@ -136,42 +128,21 @@ export class DBManager {
     /**
      * Get object managers of correct type
      */
-    static getBookmarkManager(id) {
-        dbDebugger.logWithPrefix("Generating bookmark manager...");
-        return new BookmarkManager(id);
-    }
-    static getBadgeManager(id) {
-        dbDebugger.logWithPrefix("Generating badge manager...");
-        return new BadgeManager(id);
-    }
     static getGroupManager(id) {
-        dbDebugger.logWithPrefix("Generating group manager...");
         return new GroupManager(id);
     }
     static getInvitationManager(id) {
-        dbDebugger.logWithPrefix("Generating invitation manager...");
         return new InvitationManager(id);
     }
     static getTransactionManager(id) {
-        dbDebugger.logWithPrefix("Generating transaction manager...");
         return new TransactionManager(id);
     }
-    static getTransactionAttemptManager(id) {
-        dbDebugger.logWithPrefix("Generating transaciton attempt manager...");
-        return new TransactionAttemptManager(id);
-    }
     static getUserManager(id) {
-        dbDebugger.logWithPrefix("Generating user manager...");
         return new UserManager(id);
-    }
-    static getSessionPasswordManager(id) {
-        dbDebugger.logWithPrefix("Generating session password manager...");
-        return new SessionPasswordManager(id);
     }
 
     // For use by SessionManager and SessionManager only!
     static createUserManagerFromLocalStorage(id, data) {
-        dbDebugger.logWithPrefix("Generating user manager with data from localStorage...");
         return new UserManager(id, data);
     }
 }

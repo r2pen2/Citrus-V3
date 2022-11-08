@@ -6,14 +6,10 @@ export class Debugger {
         ROUTEMANAGER: "routeManager",
         DBMANAGER: "dbManager",
         OBJECTMANAGER: "objectManager",
-        OBJECTMANAGERBADGE: "objectManagerBadge",
-        OBJECTMANAGERBOOKMARK: "objectManagerBookmark",
         OBJECTMANAGERGROUP: "objectManagerGroup",
         OBJECTMANAGERINVITATION: "objectManagerInvitation",
-        OBJECTMANAGERTRANSACTIONATTEMPT: "objectManagerTransactionAttempt",
         OBJECTMANAGERTRANSACTION: "objectManagerTransaction",
         OBJECTMANAGERUSER: "objectManagerUser",
-        OBJECTMANAGERSESSIONPASSWORD: "sessionPasswordManager",
         BROWSERMANAGER: "browserManager",
         SESSIONMANAGER: "sessionManager",
     };
@@ -34,22 +30,14 @@ export class Debugger {
                 return "[DB Manager]: ";
             case Debugger.controllerObjects.OBJECTMANAGER:
                 return "[Object Manager]: ";
-            case Debugger.controllerObjects.OBJECTMANAGERBADGE:
-                return "[Object Manager <Badge>]: ";
-            case Debugger.controllerObjects.OBJECTMANAGERBOOKMARK:
-                return "[Object Manager <Bookmark>]: ";
             case Debugger.controllerObjects.OBJECTMANAGERGROUP:
                 return "[Object Manager <Group>]: ";
             case Debugger.controllerObjects.OBJECTMANAGERINVITATION:
                 return "[Object Manager <Invitation>]: ";
             case Debugger.controllerObjects.OBJECTMANAGERTRANSACTION:
                 return "[Object Manager <Transaction>]: ";
-            case Debugger.controllerObjects.OBJECTMANAGERTRANSACTIONATTEMPT:
-                return "[Object Manager <Transaction Attempt>]: ";
             case Debugger.controllerObjects.OBJECTMANAGERUSER:
                 return "[Object Manager <User>]: ";
-            case Debugger.controllerObjects.OBJECTMANAGERSESSIONPASSWORD:
-                return "[Object Manager <Session Password>]: ";
             case Debugger.controllerObjects.BROWSERMANAGER:
                 return "[Browser Manager]: ";
             case Debugger.controllerObjects.SESSIONMANAGER:

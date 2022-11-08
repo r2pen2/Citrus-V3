@@ -31,7 +31,6 @@ export default function LoginHome() {
         // Set these fields even if this isn't a first-time login
         userManager.setLastLoginAt(new Date());
         userManager.setEmailVerified(newUser.emailVerified);
-        userManager.setLocation(null);
         
         // See if document exists in DB (meaning we've signed this user in before)
         let documentExists = await userManager.documentExists();

@@ -28,22 +28,14 @@ export class ObjectManager {
      */
     getDebugger() {
         switch (this.objectType) {
-            case DBManager.objectTypes.BOOKMARK:
-                return new Debugger(Debugger.controllerObjects.OBJECTMANAGERBOOKMARK);
             case DBManager.objectTypes.GROUP:
                 return new Debugger(Debugger.controllerObjects.OBJECTMANAGERGROUP);
-            case DBManager.objectTypes.TRANSACTIONATTEMPT:
-                return new Debugger(Debugger.controllerObjects.OBJECTMANAGERTRANSACTIONATTEMPT);
             case DBManager.objectTypes.TRANSACTION:
                 return new Debugger(Debugger.controllerObjects.OBJECTMANAGERTRANSACTION);
             case DBManager.objectTypes.INVITATION:
                 return new Debugger(Debugger.controllerObjects.OBJECTMANAGERINVITATION);
             case DBManager.objectTypes.USER:
                 return new Debugger(Debugger.controllerObjects.OBJECTMANAGERUSER);
-            case DBManager.objectTypes.BADGE:
-                return new Debugger(Debugger.controllerObjects.OBJECTMANAGERBADGE);
-            case DBManager.objectTypes.SESSIONPASSWORD:
-                return new Debugger(Debugger.controllerObjects.OBJECTMANAGERSESSIONPASSWORD);
             default:
                 return null;
         }
@@ -84,6 +76,7 @@ export class ObjectManager {
                             break;
                         case Change.changeTypes.UPDATE:
                             this.data = this.handleUpdate(change, this.data);
+                            break;
                         default:
                             this.debugger.logWithPrefix("Invalid change type when trying to apply changes!");
                             break;
