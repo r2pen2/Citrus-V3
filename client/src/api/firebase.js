@@ -19,18 +19,17 @@ import { SessionManager } from './sessionManager';
  * app that uses Firebase as its backend.
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyDDfB92e-rvY08msCFedG-t9p1tP8mjW70",
-  authDomain: "citrus-react.firebaseapp.com",
-  projectId: "citrus-react",
-  storageBucket: "citrus-react.appspot.com",
-  messagingSenderId: "735310504995",
-  appId: "1:735310504995:web:5093441ef61a7b5f6b3d96",
-  measurementId: "G-F269165D6E"
+  apiKey: "AIzaSyAMlDxLg0iubO5aU3JWqLuFjiAZrfPfBDE",
+  authDomain: "citrus-v3.firebaseapp.com",
+  projectId: "citrus-v3",
+  storageBucket: "citrus-v3.appspot.com",
+  messagingSenderId: "665676253888",
+  appId: "1:665676253888:web:e9d768e2bb4d8953dc3b25",
+  measurementId: "G-YEWGGQ0B9J"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const firestore = getFirestore();
 
