@@ -12,11 +12,11 @@ import { HomeGroupList } from "../../resources/Groups";
 // API imports
 import { RouteManager } from "../../../api/routeManager";
 
-export default function Home() {
+export default function People() {
 
   return (
-    <div className="d-flex flex-column gap-10">
-      <Breadcrumbs path="Dashboard/Home" />
+    <div className="d-flex flex-column gap-10"> 
+      <Breadcrumbs path="Dashboard/People" />
       <DashboardOweCards />
       <div>
         <SectionTitle title="Recent Transactions">
