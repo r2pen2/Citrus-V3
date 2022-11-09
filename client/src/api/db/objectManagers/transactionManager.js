@@ -1,4 +1,4 @@
-import { DBManager, Add, Remove, Set } from "../dbManager";
+import { DBManager, Add, Remove, Set, Update } from "../dbManager";
 import { ObjectManager } from "./objectManager";
 import { SessionManager } from "../../sessionManager";
 
@@ -11,58 +11,36 @@ export class TransactionManager extends ObjectManager {
     }
 
     fields = {
-        ACTIVE: "active",
-        EMOJI: "emoji",
-        CREATEDAT: "createdAt",
         CREATEDBY: "createdBy",
-        FROMBOOKMARK: "fromBookmark",
+        PAYMENTTYPE: "paymentType",
+        AMOUNT: "amount",
+        DATE: "date",
         TITLE: "title",
-        TOTAL: "total",
-        USERS: "users",
+        BALANCES: "balances",
         GROUP: "group",
-        RELATIONS: "relations",
     }
 
     getEmptyData() {
         const empty = {
-            active: null,           // {boolean} Whether or not this transaction is still active
-            emoji: null,            // {Emoji} Emoji representation of transaction 
-            createdAt: null,        // {date} Timestamp of transaction creation 
+            paymentType: null,      // {PaymentType} What type of currency was used (BEER, PIZZA, USD)
+            amount: null,           // {number} How many of that currency was used 
+            date: null,             // {date} Timestamp of transaction
+            title: null,            // {string} Title of transaction
+            balances: {},           // {map<string, number>} Map relating usedIds to how much they are owed/owe for this transaction
             createdBy: null,        // {string} ID of user that created this transaction
-            fromBookmark: null,     // {boolean} Whether or not this transaction was created from a bookmark
-            title: null,            // {string} title of transaction
-            total: null,            // {number} total value of transaction (all debts added together)
-            users: [],              // {array <- transactionUser} All users referenced in this transaction
-            group: null,            // {string} id of group that this transaction belongs to (if any)
-            relations: [],          // {array <- transactionRelation} All relations referenced in this transaction
+            group: null,            // {number} ID of this transaction's group (if applicable)
         }
         return empty;
     }
 
     handleAdd(change, data) {
         switch(change.field) {
-            case this.fields.USERS:
-                const jsonUser = change.value.toJson();
-                this.data.users.push(jsonUser);
-                return data;
-            case this.fields.RELATIONS:
-                const jsonRelation = change.value.toJson();
-                let foundRelation = false;
-                for (const transactionRelation of data.relations) {
-                    if (transactionRelation.id === jsonRelation.id) {
-                        foundRelation = true;
-                    }
-                }
-                if (!foundRelation) {
-                    this.data.relations.push(jsonRelation);
-                }
-                return data;
-            case this.fields.ACTIVE:
-            case this.fields.EMOJI:
-            case this.fields.CREATEDAT:
+            case this.fields.PAYMENTTYPE:
             case this.fields.CREATEDBY:
+            case this.fields.AMOUNT:
+            case this.fields.DATE:
             case this.fields.TITLE:
-            case this.fields.TOTAL:
+            case this.fields.BALANCES:
             case this.fields.GROUP:
                 super.logInvalidChangeType(change);
                 return data;
@@ -74,19 +52,12 @@ export class TransactionManager extends ObjectManager {
 
     handleRemove(change, data) {
         switch(change.field) {
-            case this.fields.USERS:
-                // The "change.value" should just be a user's id, so we can handle all of this in JSON
-                data.users = data.users.filter(user => user.id !== change.value);
-                return data;
-            case this.fields.RELATIONS:
-                data.relations = data.relations.filter(relation => relation.id !== change.value);
-                return data;
-            case this.fields.ACTIVE:
-            case this.fields.EMOJI:
-            case this.fields.CREATEDAT:
+            case this.fields.PAYMENTTYPE:
             case this.fields.CREATEDBY:
+            case this.fields.AMOUNT:
+            case this.fields.DATE:
             case this.fields.TITLE:
-            case this.fields.TOTAL:
+            case this.fields.BALANCES:
             case this.fields.GROUP:
                 super.logInvalidChangeType(change);
                 return data;
@@ -98,29 +69,25 @@ export class TransactionManager extends ObjectManager {
 
     handleSet(change, data) {
         switch(change.field) {
-            case this.fields.ACTIVE:
-                data.active = change.value;
-                return data;
-            case this.fields.EMOJI:
-                data.emoji = change.value;
-                return data;
-            case this.fields.CREATEDAT:
-                data.createdAt = change.value;
+            case this.fields.PAYMENTTYPE:
+                data.paymentType = change.value;
                 return data;
             case this.fields.CREATEDBY:
                 data.createdBy = change.value;
                 return data;
+            case this.fields.AMOUNT:
+                data.amount = change.value;
+                return data;
+            case this.fields.DATE:
+                data.date = change.value;
+                return data;
             case this.fields.TITLE:
                 data.title = change.value;
-                return data;
-            case this.fields.TOTAL:
-                data.total = change.value;
                 return data;
             case this.fields.GROUP:
                 data.group = change.value;
                 return data;
-            case this.fields.USERS:
-            case this.fields.RELATIONS:
+            case this.fields.BALANCES:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -135,32 +102,26 @@ export class TransactionManager extends ObjectManager {
                 await super.fetchData();
             }
             switch(field) {
-                case this.fields.ACTIVE:
-                    resolve(this.data.active);
-                    break;
-                case this.fields.EMOJI:
-                    resolve(this.data.emoji);
-                    break;
-                case this.fields.CREATEDAT:
-                    resolve(this.data.createdAt);
+                case this.fields.PAYMENTTYPE:
+                    resolve(this.data.paymentType);
                     break;
                 case this.fields.CREATEDBY:
                     resolve(this.data.createdBy);
                     break;
+                case this.fields.AMOUNT:
+                    resolve(this.data.amount);
+                    break;
+                case this.fields.DATE:
+                    resolve(this.data.date);
+                    break;
                 case this.fields.TITLE:
                     resolve(this.data.title);
-                    break;
-                case this.fields.TOTAL:
-                    resolve(this.data.total);
-                    break;
-                case this.fields.USERS:
-                    resolve(this.data.users);
                     break;
                 case this.fields.GROUP:
                     resolve(this.data.group);
                     break;
-                case this.fields.RELATIONS:
-                    resolve(this.data.relations);
+                case this.fields.BALANCES:
+                    resolve(this.data.balances);
                     break;
                 default:
                     super.logInvalidGetField(field);
@@ -169,28 +130,32 @@ export class TransactionManager extends ObjectManager {
             }
         })
     }
+    
+
+    handleUpdate(change, data) {
+        switch(change.field) {
+            case this.fields.BALANCES:
+                data.relations[change.key] = change.value;
+                return data;
+            case this.fields.PAYMENTTYPE:
+            case this.fields.CREATEDBY:
+            case this.fields.AMOUNT:
+            case this.fields.DATE:
+            case this.fields.TITLE:
+            case this.fields.GROUP:
+                super.logInvalidChangeType(change);
+                return data;
+            default:
+                super.logInvalidChangeField(change);
+                return data;
+        }
+    }
 
     // ================= Get Operations ================= //
 
-    async getActive() {
+    async getPaymentType() {
         return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.ACTIVE).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getEmoji() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.EMOJI).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getCreatedAt() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.CREATEDAT).then((val) => {
+            this.handleGet(this.fields.PAYMENTTYPE).then((val) => {
                 resolve(val);
             })
         })
@@ -204,44 +169,26 @@ export class TransactionManager extends ObjectManager {
         })
     }
 
+    async getAmount() {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.AMOUNT).then((val) => {
+                resolve(val);
+            })
+        })
+    }
+
+    async getDate() {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.DATE).then((val) => {
+                resolve(val);
+            })
+        })
+    }
+
     async getTitle() {
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.TITLE).then((val) => {
                 resolve(val);
-            })
-        })
-    }
-
-    async getTotal() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.TOTAL).then((val) => {
-                resolve(val);
-            })
-        })
-    }
-
-    async getUsers() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.USERS).then((val) => {
-                // Process list of users (in JSON format) and spit out a list of transactionUser objects
-                let transactionUsers = [];
-                for (const jsonUser of val) {
-                    transactionUsers.push(new TransactionUser(jsonUser.id, jsonUser))
-                }
-                resolve(transactionUsers);
-            })
-        })
-    }
-
-    async getUserIds() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.USERS).then((val) => {
-                // Process list of users (in JSON format) and spit out a list of transactionUser objects
-                let userIds = [];
-                for (const jsonUser of val) {
-                    userIds.push(jsonUser.id)
-                }
-                resolve(userIds);
             })
         })
     }
@@ -253,50 +200,32 @@ export class TransactionManager extends ObjectManager {
             })
         })
     }
-
-    async getRelations() {
-        return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.RELATIONS).then((val) => {
-                // Process list of relations (in JSON format) and spit out a list of TransactionRelation objects
-                let transactionRelations = [];
-                for (const jsonRelation of val) {
-                    transactionRelations.push(new TransactionRelation(jsonRelation.from.id, jsonRelation.to.id, jsonRelation.amount, jsonRelation.id, jsonRelation.from, jsonRelation.to, jsonRelation.initialAmount));
-                }
-                resolve(transactionRelations);
-            })
-        })
-    }
     
     // ================= Set Operations ================= //
 
-    setActive(newActive) {
-        const activeChange = new Set(this.fields.ACTIVE, newActive);
-        super.addChange(activeChange);
+    setPaymentType(newPaymentType) {
+        const paymentTypeChange = new Set(this.fields.PAYMENTTYPE, newPaymentType);
+        super.addChange(paymentTypeChange);
     }
 
-    setEmoji(newEmoji) {
-        const emojiChange = new Set(this.fields.EMOJI, newEmoji);
-        super.addChange(emojiChange);
-    }
-
-    setCreatedAt(newCreatedAt) {
-        const createdAtChange = new Set(this.fields.CREATEDAT, newCreatedAt);
-        super.addChange(createdAtChange);
-    }
-    
     setCreatedBy(newCreatedBy) {
         const createdByChange = new Set(this.fields.CREATEDBY, newCreatedBy);
         super.addChange(createdByChange);
+    }
+
+    setAmount(newAmount) {
+        const amountChange = new Set(this.fields.AMOUNT, newAmount);
+        super.addChange(amountChange);
+    }
+    
+    setDate(newDate) {
+        const dateChange = new Set(this.fields.DATE, newDate);
+        super.addChange(dateChange);
     }
     
     setTitle(newTitle) {
         const titleChange = new Set(this.fields.TITLE, newTitle);
         super.addChange(titleChange);
-    }
-    
-    setTotal(newTotal) {
-        const totalChange = new Set(this.fields.TOTAL, newTotal);
-        super.addChange(totalChange);
     }
     
     setGroup(newGroup) {
@@ -305,27 +234,12 @@ export class TransactionManager extends ObjectManager {
     }
 
     // ================= Add Operations ================= //
-    
-    addUser(user) {
-        const userAddition = new Add(this.fields.USERS, user);
-        super.addChange(userAddition);
-    }
-    
-    addRelation(relation) {
-        const relationAddition = new Add(this.fields.RELATIONS, relation);
-        super.addChange(relationAddition);
-    }
-
     // ================= Remove Operations ================= //
+    // ================= Update Operations ================= //
     
-    removeUser(userId) {
-        const userRemoval = new Remove(this.fields.USERS, userId);
-        super.addChange(userRemoval);
-    }
-    
-    removeRelation(relation) {
-        const relationRemoval = new Remove(this.fields.RELATIONS, relation.id);
-        super.addChange(relationRemoval);
+    updateBalance(key, relation) {
+        const balanceUpdate = new Update(this.fields.BALANCES, key, relation);
+        super.addChange(balanceUpdate);
     }
     
     // ================= Sub-Object Functions ================= //

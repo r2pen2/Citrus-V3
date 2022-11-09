@@ -57,12 +57,21 @@ export default function NewTransaction(props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    async function submit(transactionData) {
+        // Create a new TransactionManager
+        const transactionManager = DBManager.getTransactionManager();
+        transactionManager.setTotal(transactionData.total);
+        transactionManager.setTitle(transactionData.title);
+        console.log(transactionData.title)
+        console.log(transactionData.total)
+    }
+
     function renderSplitPage() {
         switch (splitPage) {
             case "add-people":
                 return <AddPeoplePage weightedUsers={weightedUsers} setWeightedUsers={setWeightedUsers} setSplitPage={setSplitPage} currentGroup={currentGroup} setCurrentGroup={setCurrentGroup} groupPicklistContent={groupPicklistContent} setPeopleInvolved={setPeopleInvolved}/>;
             case "transaction-details":
-                return <TransactionDetailsPage transactionTotal={transactionTotal} setTransactionTotal={setTransactionTotal} transactionTitle={transactionTitle} currentGroup={currentGroup} setSplitPage={setSplitPage} groupPicklistContent={groupPicklistContent} setTransactionTitle={setTransactionTitle} peopleInvolved={peopleInvolved}/>;
+                return <TransactionDetailsPage submit={submit} transactionTotal={transactionTotal} setTransactionTotal={setTransactionTotal} transactionTitle={transactionTitle} currentGroup={currentGroup} setSplitPage={setSplitPage} groupPicklistContent={groupPicklistContent} setTransactionTitle={setTransactionTitle} peopleInvolved={peopleInvolved}/>;
             case "amount-table":
                 return <AmountTable weightedUsers={weightedUsers} setWeightedUsers={setWeightedUsers} transactionTitle={transactionTitle} setSplitPage={setSplitPage} peopleInvolved={peopleInvolved}/>;
             case "transaction-summary":
@@ -512,9 +521,10 @@ function AddPeoplePage({weightedUsers, setWeightedUsers, setSplitPage, groupPick
  * @param {function} setTransactionTitle set total amount of transaction to input
  * @param {string} currentGroup id of current group or null
  * @param {array<object>} groupPicklistContent all groups and some information about them (name, id, people)
+ * @param {function} submit higher-level function to be called by submit button
  * @returns 
  */
-function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup, groupPicklistContent, transactionTitle, transactionTotal, setTransactionTotal}) {
+function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup, groupPicklistContent, transactionTitle, transactionTotal, setTransactionTotal, submit}) {
 
     const [newTitle, setNewTitle] = useState(transactionTitle ? transactionTitle : "");     // New transaction's title
     const [newTotal, setNewTotal] = useState(transactionTotal ? transactionTotal : 0);      // New transaction's total amount
@@ -544,21 +554,19 @@ function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup
         if (!newTitle) {
             return;
         }
-        return newTitle.length > 0;
+        if (!newTotal) {
+            return;
+        }
+        return newTitle.length > 0 && newTotal > 0;
     }
 
-    function setTransactionDetails() {
-        let finalTitle = newTitle;
-        if (currentGroup) {
-            if (currentGroup.length > 0) {
-                for (const group of groupPicklistContent) {
-                    if (group.id === currentGroup) {
-                        finalTitle = `${group.name}: ${newTitle}`;
-                    }
-                }
-            }
-        }
-        setTransactionTitle(finalTitle);
+    function submitTransaction() {
+        setTransactionTitle(document.getElementById("title-input").value);
+        setTransactionTotal(parseInt(document.getElementById("amount-input").value));
+        submit({
+            title: document.getElementById("title-input").value,
+            total: parseInt(document.getElementById("amount-input").value)
+        });
     }
 
     return (
@@ -578,6 +586,7 @@ function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup
                         onBlur={checkSubmitEnable}
                         onFocus={checkSubmitEnable}
                         label="Enter title..."
+                        id="title-input"
                     >
                     </TextField>
                 </FormControl>
@@ -588,6 +597,7 @@ function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup
                         inputProps={{min: 0, style: { textAlign: 'center' }}}
                         label="Amount"
                         type="number"
+                        id="amount-input"
                     >
                     </TextField>
                 </FormControl>
@@ -611,7 +621,7 @@ function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup
             </section>
             <div className="split-section">                
                 <div className="w-100 d-flex flex-row align-items-center justify-content-center">
-                    <Button variant="contained" disabled={!checkSubmitEnable()} className="w-25" onClick={() => {setTransactionDetails(); setSplitPage("amount-table")}}>Submit</Button>
+                    <Button variant="contained" disabled={!checkSubmitEnable()} className="w-25" onClick={() => submitTransaction()}>Submit</Button>
                 </div>
             </div>
         </div>
