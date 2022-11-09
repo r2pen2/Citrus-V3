@@ -14,7 +14,7 @@ import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
 import { AvatarIcon, AvatarToggle } from '../../resources/Avatars';
 import { sortByDisplayName } from '../../../api/sorting';
-import { TransactionRelation, TransactionUser } from "../../../api/db/objectManagers/transactionManager";
+import { TransactionRelation, TransactionManager, TransactionUser } from "../../../api/db/objectManagers/transactionManager";
 import { makeNumeric } from '../../../api/strings';
 import { Debugger } from '../../../api/debugger';
 
@@ -38,6 +38,8 @@ export default function NewTransaction(props) {
     const [transactionTotal, setTransactionTotal] = useState(null);         // Total amount of this transaction
     const [weightedUsers, setWeightedUsers] = useState(new Map());          // Map for keeping track of user roles and amounts
 
+    const [roles, setRoles] = useState({fronters: [], payers: []})
+
     useEffect(() => {
         async function fetchUserData() {
             // Get user manager
@@ -60,16 +62,16 @@ export default function NewTransaction(props) {
     async function submit(transactionData) {
         // Create a new TransactionManager
         const transactionManager = DBManager.getTransactionManager();
-        transactionManager.setTotal(transactionData.total);
+        transactionManager.setAmount(transactionData.amount);
+        transactionManager.setPaymentType(transactionData.paymentType);
         transactionManager.setTitle(transactionData.title);
-        console.log(transactionData.title)
-        console.log(transactionData.total)
+        console.log(roles);
     }
 
     function renderSplitPage() {
         switch (splitPage) {
             case "add-people":
-                return <AddPeoplePage weightedUsers={weightedUsers} setWeightedUsers={setWeightedUsers} setSplitPage={setSplitPage} currentGroup={currentGroup} setCurrentGroup={setCurrentGroup} groupPicklistContent={groupPicklistContent} setPeopleInvolved={setPeopleInvolved}/>;
+                return <AddPeoplePage setRoles={setRoles} weightedUsers={weightedUsers} setWeightedUsers={setWeightedUsers} setSplitPage={setSplitPage} currentGroup={currentGroup} setCurrentGroup={setCurrentGroup} groupPicklistContent={groupPicklistContent} setPeopleInvolved={setPeopleInvolved}/>;
             case "transaction-details":
                 return <TransactionDetailsPage submit={submit} transactionTotal={transactionTotal} setTransactionTotal={setTransactionTotal} transactionTitle={transactionTitle} currentGroup={currentGroup} setSplitPage={setSplitPage} groupPicklistContent={groupPicklistContent} setTransactionTitle={setTransactionTitle} peopleInvolved={peopleInvolved}/>;
             case "amount-table":
@@ -565,7 +567,8 @@ function TransactionDetailsPage({setSplitPage, setTransactionTitle, currentGroup
         setTransactionTotal(parseInt(document.getElementById("amount-input").value));
         submit({
             title: document.getElementById("title-input").value,
-            total: parseInt(document.getElementById("amount-input").value)
+            total: parseInt(document.getElementById("amount-input").value),
+            paymentType: TransactionManager.paymentTypes.USD,
         });
     }
 

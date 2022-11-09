@@ -423,6 +423,10 @@ export class TransactionManager extends ObjectManager {
             resolve(user.initialBalance > 0);
         })
     }
+
+    static paymentTypes = {
+        USD: "usd",
+    }
 }
 
 /**
