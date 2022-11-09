@@ -43,26 +43,6 @@ export function PeopleList({relations, sortingScheme}) {
         })
     }
 
-    function renderFriends() {
-        return (
-            <section>
-                <SectionTitle title="Friends">
-                    <Button variant="contained">Add Friends</Button>
-                </SectionTitle>
-                { relations.friends.length > 0 ? renderRelationCards(relations.friends) : <Typography variant="subtitle1">User has no friends.</Typography> }   
-            </section>
-        )
-    }
-
-    function renderOthers() {
-        return (
-            <section>
-                <SectionTitle title="Other Users" />
-                { renderRelationCards(relations.others) }
-            </section>
-        )
-    }
-
     function renderPeopleList() {
         if (!relations.fetched) {
             return (
@@ -73,8 +53,16 @@ export function PeopleList({relations, sortingScheme}) {
         }
         return (
             <div className="relation-cards-wrapper">
-                { renderFriends() }
-                { renderOthers() }
+                <section>
+                    <SectionTitle title="Friends">
+                        <Button variant="contained">Add Friends</Button>
+                    </SectionTitle>
+                    { renderRelationCards(relations.friends) }   
+                </section>
+                <section>
+                    <SectionTitle title="Other Users" />
+                    { renderRelationCards(relations.others) }
+                </section>
             </div>
         )
     }

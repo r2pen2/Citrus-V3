@@ -87,7 +87,6 @@ export function AvatarIcon(props) {
         async function fetchUserData() {
             if (!props.src) {
                 let url = await userManager.getPfpUrl();
-                console.log(url);
                 setPfpUrl(url);
             }
             if (!props.displayName) {
