@@ -17,6 +17,7 @@ export default function People() {
   const [relations, setRelations] = useState({
       friends: [],
       others: [],
+      fetched: false,
   });
   
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function People() {
           setRelations({
               friends: friends,
               others: others,
+              fetched: true,
           })
       }
       fetchRelations();

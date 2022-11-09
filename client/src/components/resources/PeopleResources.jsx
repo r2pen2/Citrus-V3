@@ -1,10 +1,12 @@
+// Style Imports
+import "./style/people.scss";
+
 // Library Imports
 import { useState, useEffect } from "react";
-import { Button, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Button, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress } from "@mui/material";
 
 // API Imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
-import { SessionManager } from "../../api/sessionManager";
 
 // Component Imports
 import { SectionTitle } from "./Labels";
@@ -41,16 +43,43 @@ export function PeopleList({relations, sortingScheme}) {
         })
     }
 
-    return (
-        <div>
-            <SectionTitle title="Friends">
-                <Button variant="contained">Add Friends</Button>
-            </SectionTitle>
-            { renderRelationCards(relations.friends) }
-            <SectionTitle title="Other Users" />
-            { renderRelationCards(relations.others) }
-        </div>
-    )
+    function renderFriends() {
+        return (
+            <section>
+                <SectionTitle title="Friends">
+                    <Button variant="contained">Add Friends</Button>
+                </SectionTitle>
+                { relations.friends.length > 0 ? renderRelationCards(relations.friends) : <Typography variant="subtitle1">User has no friends.</Typography> }   
+            </section>
+        )
+    }
+
+    function renderOthers() {
+        return (
+            <section>
+                <SectionTitle title="Other Users" />
+                { renderRelationCards(relations.others) }
+            </section>
+        )
+    }
+
+    function renderPeopleList() {
+        if (!relations.fetched) {
+            return (
+                <section className="d-flex flex-row justify-content-center w-100 align-items-center">
+                    <CircularProgress/>
+                </section>
+            );
+        }
+        return (
+            <div className="relation-cards-wrapper">
+                { renderFriends() }
+                { renderOthers() }
+            </div>
+        )
+    }
+
+    return renderPeopleList()
 }
 
 export function UserRelationCard({relation}) {
@@ -66,7 +95,7 @@ export function UserRelationCard({relation}) {
     }
 
     return (
-        <section className="user-relation-card w-100">
+        <div className="user-relation-card w-100">
           <OutlinedCard disableMarginBottom={true}>
               <CardActionArea onClick={() => window.location = "/dashboard/user?id=" + relation.userId}>
                   <CardContent>
@@ -84,6 +113,6 @@ export function UserRelationCard({relation}) {
                   </CardContent>
               </CardActionArea>
           </OutlinedCard>
-        </section>
+        </div>
     )
 } 

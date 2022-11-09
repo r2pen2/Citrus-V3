@@ -16,6 +16,7 @@ import { RouteManager } from "../../api/routeManager";
 import { showDollars } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
+import { SectionTitle } from "./Labels";
 
 // Get user manager from LS
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -275,7 +276,7 @@ export function GroupAdd() {
     );
 }
 
-export function HomeGroupList() {
+export function GroupList() {
 
     const [groupsData, setGroupsData] = useState({
         fetched: false,
@@ -286,21 +287,9 @@ export function HomeGroupList() {
         async function fetchGroupData() {
           currentUserManager.fetchData();
           const groupIds = await currentUserManager.getGroups();
-          let groupsList = [];
-          for (const groupId of groupIds) {
-              const groupManager = DBManager.getGroupManager(groupId);
-              const name = await groupManager.getName();
-              const users = await groupManager.getUsers();
-              const userDebt = await groupManager.getUserDebt(SessionManager.getUserId());
-              groupsList.push({
-                name: name,
-                users: users,
-                userDebt: userDebt
-              });
-          }
           setGroupsData({
               fetched: true,
-              groups: groupsList,
+              groups: groupIds,
           });
           setTimeout(() => {
             fetchGroupData();
@@ -312,28 +301,40 @@ export function HomeGroupList() {
     }, [])
 
     function renderGroupList() {
+
+      function renderCards() {
+        return groupsData.groups.map((group, index) => {
+          return <GroupPreviewCard key={index} groupId={group.id}/>
+        })
+      }
+
         if (groupsData.groups.length > 0) {
-            return groupsData.groups.map((group, index) => {
-                return <GroupPreviewCard key={index} name={group.name} users={group.users} userDebt={group.userDebt} />
-            })
+            return (
+              <section className="d-flex flex-row justify-content-center w-100">
+                <SectionTitle title="Groups" >
+                  <Button variant="contained">Add Friends</Button>
+                </SectionTitle >
+                { renderCards() }
+              </section>
+            )
         } 
         if (groupsData.fetched) {
             return (
-                <div className="d-flex flex-row justify-content-center w-100">
+                <section className="d-flex flex-row justify-content-center w-100">
                     <Typography >User has no groups.</Typography>
-                </div>
+                </section>
             )
         }
         return (
-            <div className="d-flex flex-row justify-content-center w-100">
+            <section className="d-flex flex-row justify-content-center w-100">
                 <CircularProgress/>
-            </div>
+            </section>
         )
     }
 
     return (
         <div className="d-flex flex-column mh-100 align-items-center gap-10">
-            {renderGroupList()}
+            { renderGroupList() }
         </div>
     )
 }
