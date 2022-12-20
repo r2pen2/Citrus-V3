@@ -460,39 +460,11 @@ export function TransactionDetail() {
       <TransactionDetailHeader title={transactionData.title} users={transactionData.users}/>
       <TransactionRelationList relations={transactionData.relations} />
       <div className="d-flex flex-row justify-content-between w-75 m-5">
-        {getPayButtonByRole()}
-        <Button variant="contained" color="primary" onClick={() => {RouteManager.redirectToTransactionConversation(transactionId)}}>Go to Conversation</Button>
+        { getPayButtonByRole() }
       </div>
       <Tooltip title="The nuclear option">      
         <Button variant="outlined" color="error" onClick={() => {handleDelete()}}>Delete this Transaction</Button>
       </Tooltip>
-    </div>
-  );
-}
-
-export function TransactionConversation() {
-  const params = new URLSearchParams(window.location.search);
-  const transactionId = params.get("id");
-
-  return (
-    <div>
-      <Breadcrumbs
-        path={"Dashboard/Transactions/" + transactionId + "/Conversation"}
-      />
-      <h1>Transaction Conversation Page</h1>
-      <div>Transaction Id: {transactionId}</div>
-      <h2>Needs implementation</h2>
-      <a href="https://github.com/r2pen2/Citrus-React/issues/100">
-        Github: Implement Dashboard/Transactions/Conversation?id=transactionId
-        #100
-      </a>
-      <ul>
-        <li>
-          <div>
-            A chat room within the context of the transaction in urlparams
-          </div>
-        </li>
-      </ul>
     </div>
   );
 }
