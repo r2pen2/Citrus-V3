@@ -1,6 +1,7 @@
 // Library imports
 import { useState, useEffect } from "react"
 
+
 // Component imports
 import { Breadcrumbs } from "../../resources/Navigation";
 import { SortSelector, PeopleList } from "../../resources/PeopleResources";
@@ -18,6 +19,10 @@ export default function People() {
       friends: [],
       others: [],
       fetched: false,
+  });
+  const [filter, setFilter] = useState({
+    friends: true,
+    others: true
   });
   
   useEffect(() => {
@@ -47,9 +52,9 @@ export default function People() {
 
   return (
     <div className="d-flex flex-column gap-10"> 
-      <Breadcrumbs path="Dashboard/People" />
-      <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme}/>
-      <PeopleList sortingScheme={sortingScheme} relations={relations} />
+        <Breadcrumbs path="Dashboard/People" />
+        <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme} setFilter={setFilter} filter={filter}/>
+        <PeopleList sortingScheme={sortingScheme} relations={relations} filter={filter} />
     </div>
   );
 }
