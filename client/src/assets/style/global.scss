@@ -25,7 +25,7 @@ $dashboard-content-width: 50vw;
     zoom: reset;
 }
 
-body, ul {
+body {
     // Apparently this needs to be defined OUTSIDE of the app component in order to take effect
     height: 100vh;
     margin: 0;
