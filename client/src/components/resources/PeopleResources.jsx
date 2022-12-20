@@ -36,7 +36,10 @@ export function SortSelector({setSortingScheme, sortingScheme}) {
 
 export function PeopleList({relations, sortingScheme}) {
 
-    function renderRelationCards(relevantRelations) {
+    function renderRelationCards(relevantRelations, doLoad) {
+        if (!relations.fetched) {
+            return doLoad ? <section className="d-flex flex-row justify-content-center w-100 align-items-center"><CircularProgress/></section> : <div></div>
+        }
         const sortedRelations = UserRelation.applySort(sortingScheme, relevantRelations);
         return sortedRelations.map((relation, index) => {
             return <UserRelationCard key={index} relation={relation} />;
@@ -44,24 +47,17 @@ export function PeopleList({relations, sortingScheme}) {
     }
 
     function renderPeopleList() {
-        if (!relations.fetched) {
-            return (
-                <section className="d-flex flex-row justify-content-center w-100 align-items-center">
-                    <CircularProgress/>
-                </section>
-            );
-        }
         return (
             <div className="relation-cards-wrapper">
                 <section>
                     <SectionTitle title="Friends">
                         <Button variant="contained">Add Friends</Button>
                     </SectionTitle>
-                    { renderRelationCards(relations.friends) }   
+                    { renderRelationCards(relations.friends, true) }   
                 </section>
                 <section>
                     <SectionTitle title="Other Users" />
-                    { renderRelationCards(relations.others) }
+                    { renderRelationCards(relations.others, true) }
                 </section>
             </div>
         )
