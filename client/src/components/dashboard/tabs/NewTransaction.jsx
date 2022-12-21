@@ -41,34 +41,14 @@ export default function NewTransaction(props) {
     });
     const [newTransactionPage, setNewTransactionPage] = useState("users"); // Which page of new transaction are we on
 
-    function setTransactionUsers(newUsers) {
-        setNewTransactionState({
-            users: newUsers,
-            group: newTransactionState.group,
-            currency: newTransactionState.currency,
-            total: newTransactionState.total,
-            title: newTransactionState.title
-        });
-    }
-
-    /**
-     * Set newTransactionState's group
-     * @param {string} groupId group ID (or null)
-     */
-    function setTransactionGroup(groupId) {
-        setNewTransactionState({
-            users: newTransactionState.users,
-            group: groupId,
-            currency: newTransactionState.currency,
-            total: newTransactionState.total,
-            title: newTransactionState.title
-        })
-    }
-
     function renderPage() {
         switch (newTransactionPage) {
             case "users":
-                return <UsersPage setUsers={setTransactionUsers} newTransactionState={newTransactionState} setNewTransactionState={setNewTransactionState} setGroup={setTransactionGroup}/>;
+                return <UsersPage newTransactionState={newTransactionState} setNewTransactionState={setNewTransactionState} nextPage={() => setNewTransactionPage("amount")}/>;
+            case "amount":
+                return <AmountPage newTransactionState={newTransactionState} setNewTransactionState={setNewTransactionState} nextPage={() => setNewTransactionPage("summary")}/>;
+            case "summary":
+                return <div>Summary</div>
             default:
                 return <div>Error: invalid transaction page!</div>
         }
@@ -76,13 +56,13 @@ export default function NewTransaction(props) {
 
     return (
         <div className="d-flex flex-column align-items-center justify-content-start w-100">
-            <h1>New Expense</h1>
+            <h1>{newTransactionState.group ? "New Group Expense" : "New Expense"}</h1>
             { renderPage() }
         </div>
     )
 }
 
-function UsersPage({setUsers, setGroup, newTransactionState, setNewTransactionState}) {
+function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     
     const [userData, setUserData] = useState({
         recents: [],
@@ -196,7 +176,6 @@ function UsersPage({setUsers, setGroup, newTransactionState, setNewTransactionSt
     async function submitAdd() {
         let newUsersList = [];
         if (checkedGroup) {
-            setGroup(checkedGroup);
             // checkedGroup is just an ID, so we have to dig up the group's data
             for (const groupData of userData.groups) {
                 if (groupData.id === checkedGroup) {
@@ -220,8 +199,14 @@ function UsersPage({setUsers, setGroup, newTransactionState, setNewTransactionSt
             }
             newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl()}); // Add self
         }
-        console.log(newUsersList)
-        setUsers(newUsersList);
+        setNewTransactionState({
+            users: newUsersList,
+            group: checkedGroup ? checkedGroup : null,
+            currency: newTransactionState.currency,
+            total: newTransactionState.total,
+            title: newTransactionState.title
+        });
+        nextPage();
     }
 
     return (
@@ -235,6 +220,83 @@ function UsersPage({setUsers, setGroup, newTransactionState, setNewTransactionSt
                 { renderFriends() }
             </div>
             <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAdd()}>Next</Button>
+        </div>
+
+    )
+}
+
+function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
+    
+    const emojiCurrencies = {
+        BEER: "🍺",
+        PIZZA: "🍕",
+        COFFEE: "☕",
+    }
+
+    const legalCurrencies = {
+        USD: "USD",
+    }
+
+    const [submitEnable, setSubmitEnable] = useState(false);
+    const [currencyState, setCurrencyState] = useState({
+        legal: true,
+        legalType: legalCurrencies.USD,
+        emojiType: emojiCurrencies.BEER,
+    })
+
+    function submitAmount() {
+        nextPage();
+    }
+
+    function populateCurrencyTypeSelect() {
+        console.log(currencyState)
+        let menu = legalCurrencies;
+        if (!currencyState.legal) {
+            menu = emojiCurrencies;
+        } 
+        return Object.entries(menu).map((entry) => {
+            return <MenuItem key={entry[0]} value={entry[1]}>{entry[1]}</MenuItem>
+        })
+    }
+
+//setCurrencyState({legal: e.target.value, type: currencyState.type, placeholderText: currencyState.placeholderText
+
+    function handleCurrencyTypeChange(e) {
+        if (currencyState.legal) {
+            setCurrencyState({
+                legal: e.target.value, 
+                legalType: e.target.value, 
+                emojiType: currencyState.emojiType
+            });
+        } else {
+            setCurrencyState({
+                legal: currencyState.legal, 
+                legalType: currencyState.legalType, 
+                emojiType: e.target.value
+            });
+        }
+    }
+
+    function getTextfieldPlaceholder() {
+        return currencyState.legal ? "0.00" : "x1";
+    }
+
+    return (
+        <div className="d-flex flex-column w-50 align-items-center gap-10">
+            <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
+                <TextField id="name-input" label="Enter Name" variant="standard"/>
+                <div className="d-flex flex-row justify-space-between gap-10">
+                    <Select id="currency-family-input" value={currencyState.legal} onChange={e => setCurrencyState({legal: e.target.value, legalType: currencyState.legalType, emojiType: currencyState.emojiType})} >
+                        <MenuItem value={true}>$</MenuItem>
+                        <MenuItem value={false}>😉</MenuItem>
+                    </Select>
+                    <TextField id="amount-input" type="number" label="Amount" placeholder={getTextfieldPlaceholder()} variant="standard"/>
+                    <Select id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
+                        { populateCurrencyTypeSelect() }
+                    </Select>
+                </div>
+            </div>
+            <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAmount()}>Next</Button>
         </div>
 
     )
