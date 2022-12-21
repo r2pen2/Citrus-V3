@@ -1,11 +1,12 @@
 // Library imports
 import { useState, useEffect } from 'react';
-import { Button, Select, InputLabel, FormControl, InputAdornment, Input, MenuItem, Typography, TextField, CircularProgress, Paper, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton } from '@mui/material';
+import { Button, Select, InputLabel, FormControl, InputAdornment, Input, MenuItem, Typography, TextField, CircularProgress, Paper, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import CancelIcon from '@mui/icons-material/Cancel';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import GroupsIcon from '@mui/icons-material/Groups';
-import StartIcon from '@mui/icons-material/Start';
 
 // Component imports
 import { TransactionRelationList } from "../../resources/Transactions";
@@ -98,6 +99,8 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
         friends: []
     });
     const [checkedFriends, setCheckedFriends] = useState([]);
+    const [checkedGroup, setCheckedGroup] = useState(null);
+    const [submitEnable, setSubmitEnable] = useState(false);
 
     useEffect(() => {
         async function fetchUserData() {
@@ -132,26 +135,44 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
         return <div></div>
     }
 
+    function handleGroupCheckbox(e, id) {
+        e.preventDefault();
+        if (checkedGroup === id) {
+            setCheckedGroup(null);
+            setSubmitEnable(checkedFriends.length > 0);
+        } else {
+            setCheckedGroup(id);
+            setSubmitEnable(true);
+        }
+    }
+
     function renderGroups() {
         return userData.groups.map(group => {
             return (
-                <OutlinedCard>
-                    <div key={"group-" + group.id} className="d-flex flex-row justify-content-between">
-                        <div className="d-flex flex-row align-items-center gap-10">
-                            <GroupsIcon />
-                            <div>{group.name}</div>
+                <OutlinedCard backgroundColor={(!checkedGroup || checkedGroup === group.id) ? "white" : "lightgray"}>
+                    <CardActionArea onClick={e => handleGroupCheckbox(e, group.id)}>
+                        <div key={"group-" + group.id} className="d-flex flex-row justify-content-between">
+                            <div className="d-flex flex-row align-items-center gap-10">
+                                <div className="d-flex flex-row align-items-center gap-10">
+                                    <GroupsIcon />
+                                    <div>x{group.memberCount}</div>
+                                </div>
+                                <div>{group.name}</div>
+                            </div>
+                            <Checkbox disabled={(checkedGroup && checkedGroup !== group.id)} checked={checkedGroup === group.id} icon={<RadioButtonUncheckedIcon />} checkedIcon={<CancelIcon />} />
                         </div>
-                        <IconButton>
-                            <StartIcon />
-                        </IconButton>
-                    </div>
+                    </CardActionArea>
                 </OutlinedCard>
             )
         })
     }
 
     function handleFriendCheckbox(e, id) {
-        let newCheckedFriends = new Array(checkedFriends);
+        e.preventDefault();
+        if (checkedGroup) {
+            return;
+        }
+        let newCheckedFriends = checkedFriends;
         if (newCheckedFriends.indexOf(id) !== -1) {
             newCheckedFriends = newCheckedFriends.filter(f => f.id === id);
             setCheckedFriends(newCheckedFriends);
@@ -159,19 +180,22 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
             newCheckedFriends.push(id); 
             setCheckedFriends(newCheckedFriends);
         }
+        setSubmitEnable(newCheckedFriends.length > 0 || checkedGroup);
     }
     
     function renderFriends() {
         return userData.friends.map(friend => {
             return (
-                <OutlinedCard>
-                    <div key={"friend-" + friend.id} className="d-flex flex-row justify-content-between">
-                        <div className="d-flex flex-row align-items-center gap-10">
-                            <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
-                            <div>{friend.displayName}</div>
+                <OutlinedCard backgroundColor={(!checkedGroup) ? "white" : "lightgray"}>
+                    <CardActionArea onClick={e => handleFriendCheckbox(e, friend.id)} >
+                        <div key={"friend-" + friend.id} className="d-flex flex-row justify-content-between">
+                            <div className="d-flex flex-row align-items-center gap-10">
+                                <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
+                                <div>{friend.displayName}</div>
+                            </div>
+                            <Checkbox disabled={checkedGroup} checked={checkedFriends.includes(friend.id) && !checkedGroup} icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} />
                         </div>
-                        <Checkbox icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} onClick={e => handleFriendCheckbox(e, friend.id)} />
-                    </div>
+                    </CardActionArea>
                 </OutlinedCard>
             )
         })
@@ -187,7 +211,7 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
                 <SectionTitle title="Friends"/>
                 { renderFriends() }
             </div>
-            <Button variant="contained" color="primary" className="w-50" disabled={newTransactionState.users.length <= 0}>Next</Button>
+            <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable}>Next</Button>
         </div>
 
     )

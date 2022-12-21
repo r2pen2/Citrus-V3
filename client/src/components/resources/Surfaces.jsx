@@ -27,6 +27,7 @@ export function ColoredCard(props) {
  * 
  * @param {string} borderStyle border style (solid, dashed, dotted, etc) 
  * @param {string} borderWeight weight of border in pixels 
+ * @param {string} backgroundColor background color value 
  * @param {string} borderRadius border radius value 
  * @param {boolean} disableMarginBottom whether or not to disable bottom margin 
  * @param {string} color outline color 
@@ -37,7 +38,7 @@ export function OutlinedCard(props) {
         return {
             var: "outlined",
             borderRadius: props.borderRadius ? props.borderRadius : "10px",
-            backgroundColor: "white",
+            backgroundColor: props.backgroundColor ? props.backgroundColor : "white",
             width: "100%",
             marginBottom: props.disableMarginBottom ? "0px" : "10px",
             border: (props.borderWeight ? props.borderWeight : "1px") + " " + (props.borderStyle ? props.borderStyle : "solid") + " " + (props.borderColor ? props.borderColor : "darkgrey"),
