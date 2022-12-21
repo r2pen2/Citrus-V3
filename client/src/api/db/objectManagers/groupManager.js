@@ -311,6 +311,17 @@ export class GroupManager extends ObjectManager {
         })
     }
 
+    /**
+     * Get the number of users in a group
+     * @returns {number} number of users in the group
+     */
+    async getMemberCount() {
+        return new Promise(async (resolve, reject) => {
+            const groupMembers = await this.getUsers();
+            resolve(groupMembers.length);
+        })
+    }
+
     // ================= Set Operations ================= //
     setCreatedAt(newCreatedAt) {
         const createdAtChange = new Set(this.fields.CREATEDAT, newCreatedAt);
