@@ -41,43 +41,34 @@ export default function NewTransaction(props) {
     });
     const [newTransactionPage, setNewTransactionPage] = useState("users"); // Which page of new transaction are we on
 
-    /**
-     * Adds a user to newTransactionState along with their pfpUrl and displayName
-     * @param {string} userId id of user to add
-     */
-    async function addTransactionUser(userId) {
-        let newUsers = newTransactionState.users;
-        const userManager = DBManager.getUserManager(userId);
-        let name = await userManager.getDisplayName(); 
-        let url = await userManager.getPfpUrl();
-        newUsers.push({id: userId, displayName: name, pfpUrl: url});
+    function setTransactionUsers(newUsers) {
         setNewTransactionState({
             users: newUsers,
             group: newTransactionState.group,
             currency: newTransactionState.currency,
             total: newTransactionState.total,
             title: newTransactionState.title
-        }) 
+        });
     }
 
     /**
-     * Removes a user from newTransactionState
-     * @param {string} userId id of user to add
+     * Set newTransactionState's group
+     * @param {string} groupId group ID (or null)
      */
-    async function removeTransactionUser(userId) {
-        const newUsers = newTransactionState.users.filter(u => u.id !== userId);
+    function setTransactionGroup(groupId) {
         setNewTransactionState({
-            users: newUsers,
-            group: newTransactionState.group,
+            users: newTransactionState.users,
+            group: groupId,
             currency: newTransactionState.currency,
             total: newTransactionState.total,
             title: newTransactionState.title
-        }) 
+        })
     }
+
     function renderPage() {
         switch (newTransactionPage) {
             case "users":
-                return <UsersPage addUser={addTransactionUser} removeUser={removeTransactionUser} newTransactionState={newTransactionState}/>;
+                return <UsersPage setUsers={setTransactionUsers} newTransactionState={newTransactionState} setNewTransactionState={setNewTransactionState} setGroup={setTransactionGroup}/>;
             default:
                 return <div>Error: invalid transaction page!</div>
         }
@@ -85,13 +76,13 @@ export default function NewTransaction(props) {
 
     return (
         <div className="d-flex flex-column align-items-center justify-content-start w-100">
-            <h1>{ newTransactionState.title ? newTransactionState.title : "New Expense" }</h1>
+            <h1>New Expense</h1>
             { renderPage() }
         </div>
     )
 }
 
-function UsersPage({addUser, removeUser, newTransactionState}) {
+function UsersPage({setUsers, setGroup, newTransactionState, setNewTransactionState}) {
     
     const [userData, setUserData] = useState({
         recents: [],
@@ -118,7 +109,8 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
                 const groupUserManager = DBManager.getGroupManager(groupId);
                 let groupName = await groupUserManager.getName();
                 let groupMemberCount = await groupUserManager.getMemberCount();
-                newGroups.push({id: groupId, name: groupName, memberCount: groupMemberCount});
+                let groupMembers = await groupUserManager.getUsers();
+                newGroups.push({id: groupId, name: groupName, memberCount: groupMemberCount, members: groupMembers});
             }
             setUserData({
                 recents: userData.recents,
@@ -149,9 +141,9 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
     function renderGroups() {
         return userData.groups.map(group => {
             return (
-                <OutlinedCard backgroundColor={(!checkedGroup || checkedGroup === group.id) ? "white" : "lightgray"}>
+                <OutlinedCard key={"group-" + group.id} backgroundColor={(!checkedGroup || checkedGroup === group.id) ? "white" : "lightgray"}>
                     <CardActionArea onClick={e => handleGroupCheckbox(e, group.id)}>
-                        <div key={"group-" + group.id} className="d-flex flex-row justify-content-between">
+                        <div className="d-flex flex-row justify-content-between">
                             <div className="d-flex flex-row align-items-center gap-10">
                                 <div className="d-flex flex-row align-items-center gap-10">
                                     <GroupsIcon />
@@ -159,7 +151,7 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
                                 </div>
                                 <div>{group.name}</div>
                             </div>
-                            <Checkbox disabled={(checkedGroup && checkedGroup !== group.id)} checked={checkedGroup === group.id} icon={<RadioButtonUncheckedIcon />} checkedIcon={<CancelIcon />} />
+                            <Checkbox disabled={(checkedGroup !== null && checkedGroup !== group.id)} checked={checkedGroup === group.id} icon={<RadioButtonUncheckedIcon />} checkedIcon={<CancelIcon />} />
                         </div>
                     </CardActionArea>
                 </OutlinedCard>
@@ -186,21 +178,52 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
     function renderFriends() {
         return userData.friends.map(friend => {
             return (
-                <OutlinedCard backgroundColor={(!checkedGroup) ? "white" : "lightgray"}>
+                <OutlinedCard key={"friend-" + friend.id} backgroundColor={(!checkedGroup) ? "white" : "lightgray"}>
                     <CardActionArea onClick={e => handleFriendCheckbox(e, friend.id)} >
-                        <div key={"friend-" + friend.id} className="d-flex flex-row justify-content-between">
+                        <div className="d-flex flex-row justify-content-between">
                             <div className="d-flex flex-row align-items-center gap-10">
                                 <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
                                 <div>{friend.displayName}</div>
                             </div>
-                            <Checkbox disabled={checkedGroup} checked={checkedFriends.includes(friend.id) && !checkedGroup} icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} />
+                            <Checkbox disabled={checkedGroup !== null} checked={checkedFriends.includes(friend.id) && !checkedGroup} icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} />
                         </div>
                     </CardActionArea>
                 </OutlinedCard>
             )
         })
     }
-    
+
+    async function submitAdd() {
+        let newUsersList = [];
+        if (checkedGroup) {
+            setGroup(checkedGroup);
+            // checkedGroup is just an ID, so we have to dig up the group's data
+            for (const groupData of userData.groups) {
+                if (groupData.id === checkedGroup) {
+                    // Get user info
+                    for (const groupMemberId of groupData.members) {
+                        const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
+                        let displayName = await groupMemberUserManager.getDisplayName();
+                        let pfpUrl = await groupMemberUserManager.getPfpUrl();
+                        newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl});
+                    }
+                }
+            }
+        } else {
+            for (const friendId of checkedFriends) {
+                // CheckedFriends is just a list of IDs, so we have to dig up the friend's full data
+                for (const friendData of userData.friends) {
+                    if (friendData.id === friendId) {            
+                        newUsersList.push({id: friendData.id, displayName: friendData.displayName, pfpUrl: friendData.pfpUrl});
+                    }
+                }
+            }
+            newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl()}); // Add self
+        }
+        console.log(newUsersList)
+        setUsers(newUsersList);
+    }
+
     return (
         <div className="d-flex flex-column w-50 align-items-center gap-10">
             <div className="vh-60 w-100">
@@ -211,7 +234,7 @@ function UsersPage({addUser, removeUser, newTransactionState}) {
                 <SectionTitle title="Friends"/>
                 { renderFriends() }
             </div>
-            <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable}>Next</Button>
+            <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAdd()}>Next</Button>
         </div>
 
     )
