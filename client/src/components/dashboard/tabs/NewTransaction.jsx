@@ -20,7 +20,7 @@ import { CurrencyManager } from "../../../api/currencyManager";
 import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
 import { AvatarIcon, AvatarToggle } from '../../resources/Avatars';
-import { sortByDisplayName } from '../../../api/sorting';
+import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
 import { TransactionRelation, TransactionManager, TransactionUser } from "../../../api/db/objectManagers/transactionManager";
 import { makeNumeric } from '../../../api/strings';
 import { Debugger } from '../../../api/debugger';
@@ -186,7 +186,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                         const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
                         let displayName = await groupMemberUserManager.getDisplayName();
                         let pfpUrl = await groupMemberUserManager.getPfpUrl();
-                        newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl});
+                        newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl, paidByManualAmount: null, splitManuamAmount: null});
                     }
                 }
             }
@@ -195,11 +195,11 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 // CheckedFriends is just a list of IDs, so we have to dig up the friend's full data
                 for (const friendData of userData.friends) {
                     if (friendData.id === friendId) {            
-                        newUsersList.push({id: friendData.id, displayName: friendData.displayName, pfpUrl: friendData.pfpUrl});
+                        newUsersList.push({id: friendData.id, displayName: friendData.displayName, pfpUrl: friendData.pfpUrl, paidByManualAmount: null, splitManuamAmount: null});
                     }
                 }
             }
-            newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl()}); // Add self
+            newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl(), paidByManualAmount: null, splitManuamAmount: null}); // Add self
         }
         setNewTransactionState({
             users: newUsersList,
@@ -212,7 +212,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     return (
-        <div className="d-flex flex-column w-50 align-items-center gap-10">
+        <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="vh-60 w-100">
                 <SectionTitle title="Recent"/>
                 { renderRecents() }
@@ -238,15 +238,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     const [isIOU, setIsIOU] = useState(false);
     const [paidByDialogOpen, setPaidByDialogOpen] = useState(false);
     const [paidByTab, setPaidByTab] = useState("even");
-    const [checkedUsers, setCheckedUsers] = useState(initCheckedUsers());
-
-    function initCheckedUsers() {
-        let newCheckedUsers = [];
-        for (const user of newTransactionState.users) {
-            newCheckedUsers.push(user.id);
-        }
-        return newCheckedUsers;
-    }
+    const [paidByCheckedUsers, setPaidByCheckedUsers] = useState([SessionManager.getUserId()]);
+    const [paidByCheckedUsersPrevious, setPaidByCheckedUsersPrevious] = useState([SessionManager.getUserId()]);
+    const [newTransactionStatePrevious, setNewTransactionStatePrevious] = useState(newTransactionState);
 
     function submitAmount() {
         nextPage();
@@ -282,7 +276,10 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function getPaidByButtonText() {
-        return "you";
+        if (paidByCheckedUsers.length > 1) {
+            return `${paidByCheckedUsers.length} people`;
+        }
+        return paidByCheckedUsers[0] === SessionManager.getUserId() ? "you" : "someone else";
     }
 
     function getSplitButtonText() {
@@ -303,7 +300,28 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         });
     }
 
-    function handlePaidByDialogClose() {
+    function getTotalManualAmounts() {
+        let total = 0;
+        for (const user of newTransactionState.users) {
+            if (user.paidByManualAmount) {
+                total += user.paidByManualAmount;
+            }
+        }
+        return total;
+    }
+
+    function formatTotalManualAmount() {
+        const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        return `${typeString}${getTotalManualAmounts()}`;
+    }
+
+    function handlePaidByDialogClose(event, reason) {
+        if (reason === "backdropClick") {
+            return;
+        }
+
+        console.log(paidByCheckedUsers)
+
         setPaidByDialogOpen(false);
     }
 
@@ -312,53 +330,157 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         return `${typeString}${newTransactionState.total}`;
     }
 
-    function toggleCheckedUser(userId) {
-        if (checkedUsers.includes(userId)) {
+    function togglePaidByCheckedUser(userId) {
+        if (paidByCheckedUsers.includes(userId)) {
             // Remove this user
-            setCheckedUsers(checkedUsers.filter(uid => uid !== userId));
+            setPaidByCheckedUsers(paidByCheckedUsers.filter(uid => uid !== userId));
         } else {
             // This is kinda ugly but need to make a new array bc of pointers!
             let newCheckedUsers = [];
-            for (const uid of checkedUsers) {
+            for (const uid of paidByCheckedUsers) {
                 newCheckedUsers.push(uid);
             }
             newCheckedUsers.push(userId);
-            setCheckedUsers(newCheckedUsers);
+            setPaidByCheckedUsers(newCheckedUsers);
         }
     }
 
     function renderPaidByTab() {
-        if (paidByTab === "even") {
-            return newTransactionState.users.map((user, index) => {
-                return (
-                    <div key={index} className="m-2 d-flex flex-row w-50 align-items-center justify-content-between">
-                        <section className="d-flex flex-row justify-content-start gap-10 align-items-center w-80">
-                            <AvatarIcon src={user.pfpUrl} displayName={user.displayName} />
+
+        function updateUserPaidByManualAmount(e, uid) {
+            const amt = parseInt(e.target.value);
+            if (amt < 0) {
+                return;
+            }
+            let newUsers = [];
+            for (const user of newTransactionState.users) {
+                if (user.id === uid) {
+                    user.paidByManualAmount = amt;
+                }
+                newUsers.push(user);
+            }
+
+            if (amt >= 0) {
+                let newCheckedUsers = [];
+                for (const id of paidByCheckedUsers) {
+                    newCheckedUsers.push(id);
+                }
+                if (!newCheckedUsers.includes(uid)) {
+                    newCheckedUsers.push(uid);
+                }
+                setPaidByCheckedUsers(newCheckedUsers);
+            }
+
+            if (amt === 0) {
+                let newCheckedUsers = paidByCheckedUsers.filter(id => id !== uid);
+                setPaidByCheckedUsers(newCheckedUsers);
+            }
+
+            setNewTransactionState({
+                users: newUsers,
+                group: newTransactionState.group,
+                currency: newTransactionState.currency,
+                total: newTransactionState.total,
+                title: newTransactionState.title
+            });
+        }
+
+        function renderEvenUser(user, index) {
+            return (
+                <div key={index} className="m-2 d-flex flex-row w-80 align-items-center justify-content-between">
+                    <section className="d-flex flex-row justify-content-start gap-10 align-items-center w-80">
+                        <AvatarIcon src={user.pfpUrl} displayName={user.displayName} />
+                        <div className="d-flex flex-column">
                             <div>{user.displayName}</div>
-                        </section>
-                        <section className="d-flex flex-row justify-content-end align-items-center">
-                            <Checkbox checked={checkedUsers.includes(user.id)} onChange={() => toggleCheckedUser(user.id)}></Checkbox>
-                        </section>
-                    </div>
-                ) 
+                            { user.id === SessionManager.getUserId() ? <div className="color-primary">(You)</div> : <div/>}
+                        </div>
+                    </section>
+                    <section className="d-flex flex-row justify-content-end align-items-center">
+                        <Checkbox checked={paidByCheckedUsers.includes(user.id)} onChange={() => togglePaidByCheckedUser(user.id)}></Checkbox>
+                    </section>
+                </div>
+            )
+        }
+
+        function renderManualUser(user, index) {
+            return (
+                <div key={index} className="m-2 d-flex flex-row w-80 align-items-center justify-content-between">
+                    <section className="d-flex flex-row justify-content-start gap-10 align-items-center w-80">
+                        <AvatarIcon src={user.pfpUrl} displayName={user.displayName} />
+                        <div className="d-flex flex-column">
+                            <div>{user.displayName}</div>
+                            { user.id === SessionManager.getUserId() ? <div className="color-primary">(You)</div> : <div/>}
+                        </div>
+                    </section>
+                    <section className="d-flex flex-row justify-content-end align-items-center">
+                        <TextField id="amount-input" type="number" label="Amount" value={user.paidByManualAmount ? user.paidByManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserPaidByManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                    </section>
+                </div>
+            )
+        }
+
+        function getTotalWarning() {
+            if (getTotalManualAmounts() < newTransactionState.total) {
+                return "Too low ✘"
+            }
+            if (getTotalManualAmounts() > newTransactionState.total) {
+                return "Too high ✘";
+            }
+            return "Good ✓";
+        }
+
+        // First sort alphabetically
+        let sortedUsers = sortByDisplayName(newTransactionState.users);
+        // Then place current user first
+        sortedUsers = placeCurrentUserFirst(sortedUsers);
+        if (paidByTab === "even") {
+            return sortedUsers.map((user, index) => {
+                return renderEvenUser(user, index);
             })
         }
         if (paidByTab === "manual") {
-            return <div>Manual</div>;
+            return sortedUsers.map((user, index) => {
+                if (index < sortedUsers.length - 1) {
+                    return renderManualUser(user, index);
+                } else {
+                    return (
+                        <div key={index} className="d-flex flex-column w-100 align-items-center">
+                            { renderManualUser(user, index) }
+                            <div className="d-flex flex-row justify-content-end w-80">
+                                <div className="d-flex flex-column align-items-end">
+                                    <p className={"font-weight-bold " + (getTotalManualAmounts() !== newTransactionState.total ? "text-red" : "color-primary")}>Total: { formatTotalManualAmount() }</p>
+                                    <p className={getTotalManualAmounts() !== newTransactionState.total ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            })
         }
         return <div>Invalid paidByTab</div>;
     }
 
+    function updateTitle(e) {
+        setNewTransactionState({
+            users: newTransactionState.users,
+            group: newTransactionState.group,
+            currency: newTransactionState.currency,
+            total: newTransactionState.total,
+            title: e.target.value
+        });
+    }
+
     return (
-        <div className="d-flex flex-column w-50 align-items-center gap-10">
+        <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
-                <TextField id="name-input" label="Enter Name" variant="standard"/>
+                <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : "\0"}</h2>
+                <TextField id="name-input" label="Enter Name" variant="standard" onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
                     <Select id="currency-family-input" value={currencyState.legal} onChange={e => setCurrencyState({legal: e.target.value, legalType: currencyState.legalType, emojiType: currencyState.emojiType})} >
                         <MenuItem value={true}>$</MenuItem>
                         <MenuItem value={false}>😉</MenuItem>
                     </Select>
-                    <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : ""} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
+                    <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : "\0"} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
                     <Select id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
                     </Select>
@@ -386,7 +508,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAmount()}>Next</Button>
             
             
-            <Dialog fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={handlePaidByDialogClose} aria-describedby="alert-dialog-slide-description">
+            <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">
                     <section className="d-flex flex-column align-items-center justify-content-center m-2">
                         <h1>{getTotalString()}</h1>
@@ -399,10 +521,10 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </ToggleButtonGroup>
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-start vh-50 overflow-auto">
-                        {renderPaidByTab()}
+                        { renderPaidByTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={handlePaidByDialogClose} disabled={checkedUsers.length < 1}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalManualAmounts() !== newTransactionState.total)}>Next</Button>
                     </section>
                 </div>
             </Dialog>

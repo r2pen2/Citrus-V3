@@ -11,6 +11,14 @@
     color: lightgray;
 }
 
+.text-red {
+    color: #EA4236;
+}
+
+.color-primary {
+    color: #BFD679;
+}
+
 .test-border {
     border: 2px solid red;
 }

@@ -1,3 +1,5 @@
+import { SessionManager } from "./sessionManager";
+
 /**
  * Sorts a list by date
  * @param {[Object]} array list to be sorted
@@ -68,4 +70,32 @@ export function sortByDate(array) {
         return 0;
     });
     return array;
+}
+
+/**
+ * Places the current user first in a list (by UID)
+ * @param {[Object]} array list to be sorted
+ * @returns {[Object]} sorted list with current user at top 
+ */
+export function placeCurrentUserFirst(array) {
+    return placeUserFirst(array, SessionManager.getUserId());
+}
+
+/**
+ * Places selected user first in a list
+ * @param {[Object]} array list to be sorted
+ * @returns {[Object]} sorted list with selected user at top 
+ */
+export function placeUserFirst(array, uid) {
+    let selectedUser = null;
+    let newArray = [];
+    for (const u of array) {
+        if (u.id === uid) {
+            selectedUser = u;
+        } else {
+            newArray.push(u);
+        }
+    }
+    newArray.unshift(selectedUser);
+    return newArray;
 }
