@@ -1,12 +1,13 @@
 // Library imports
 import { useState, useEffect } from 'react';
-import { Button, Select, InputLabel, FormControl, InputAdornment, Input, MenuItem, Typography, TextField, CircularProgress, Paper, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea } from '@mui/material';
+import { Button, Select, InputLabel, FormControl, InputAdornment, Input, MenuItem, FormGroup, TextField, FormControlLabel, Paper, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import GroupsIcon from '@mui/icons-material/Groups';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 // Component imports
 import { TransactionRelationList } from "../../resources/Transactions";
@@ -36,7 +37,7 @@ export default function NewTransaction(props) {
         users: [],
         group: null,
         currency: "USD",
-        total: 0,
+        total: null,
         title: ""
     });
     const [newTransactionPage, setNewTransactionPage] = useState("users"); // Which page of new transaction are we on
@@ -243,13 +244,13 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         legalType: legalCurrencies.USD,
         emojiType: emojiCurrencies.BEER,
     })
+    const [isIOU, setIsIOU] = useState(false);
 
     function submitAmount() {
         nextPage();
     }
 
     function populateCurrencyTypeSelect() {
-        console.log(currencyState)
         let menu = legalCurrencies;
         if (!currencyState.legal) {
             menu = emojiCurrencies;
@@ -281,20 +282,56 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         return currencyState.legal ? "0.00" : "x1";
     }
 
+    function getPaidByButtonText() {
+        return "you";
+    }
+
+    function getSplitButtonText() {
+        return "evenly";
+    }
+
+    function updateAmount(e) {
+        setNewTransactionState({
+            users: newTransactionState.users,
+            group: newTransactionState.group,
+            currency: newTransactionState.currency,
+            total: parseInt(e.target.value),
+            title: newTransactionState.title
+        });
+    }
+
     return (
         <div className="d-flex flex-column w-50 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
                 <TextField id="name-input" label="Enter Name" variant="standard"/>
-                <div className="d-flex flex-row justify-space-between gap-10">
+                <section className="d-flex flex-row justify-space-between gap-10">
                     <Select id="currency-family-input" value={currencyState.legal} onChange={e => setCurrencyState({legal: e.target.value, legalType: currencyState.legalType, emojiType: currencyState.emojiType})} >
                         <MenuItem value={true}>$</MenuItem>
                         <MenuItem value={false}>😉</MenuItem>
                     </Select>
-                    <TextField id="amount-input" type="number" label="Amount" placeholder={getTextfieldPlaceholder()} variant="standard"/>
+                    <TextField id="amount-input" type="number" label="Amount" placeholder={getTextfieldPlaceholder()} onChange={updateAmount}variant="standard"/>
                     <Select id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
                     </Select>
+                </section>
+                <section className="d-flex flex-column align-items-center gap-10">
+                    <div className="d-flex flex-row gap-10 align-items-center">
+                        <div className={(!newTransactionState.total) ? "light-text" : ""}>Paid by:</div>
+                        <Button disabled={!newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />}>{getPaidByButtonText()}</Button>
+                    </div>
+                    <div className="d-flex flex-row gap-10 align-items-center">
+                        <div className={(isIOU || !newTransactionState.total) ? "light-text" : ""}>Split:</div>
+                        <Button disabled={isIOU || !newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />}>{getSplitButtonText()}</Button>
+                    </div>
+                </section>
+                <div>
+                    OR
                 </div>
+                <section>
+                    <FormGroup>
+                        <FormControlLabel control={<Checkbox checked={isIOU} onChange={() => setIsIOU(!isIOU)}/>} label="This is an IOU" />
+                    </FormGroup>
+                </section>
             </div>
             <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAmount()}>Next</Button>
         </div>
