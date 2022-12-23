@@ -1,6 +1,6 @@
 // Library imports
-import { useState, useEffect } from 'react';
-import { Button, Select, InputLabel, FormControl, InputAdornment, Input, MenuItem, FormGroup, TextField, FormControlLabel, Paper, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea } from '@mui/material';
+import { useState, useEffect, forwardRef } from 'react';
+import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, DialogContentText, Slide, MenuItem, FormGroup, TextField, FormControlLabel, DialogActions, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea, Avatar } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -16,6 +16,7 @@ import { SectionTitle } from "../../resources/Labels";
 
 // API imports
 import { SessionManager } from "../../../api/sessionManager";
+import { CurrencyManager } from "../../../api/currencyManager";
 import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
 import { AvatarIcon, AvatarToggle } from '../../resources/Avatars';
@@ -227,34 +228,32 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 }
 
 function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
-    
-    const emojiCurrencies = {
-        BEER: "🍺",
-        PIZZA: "🍕",
-        COFFEE: "☕",
-    }
-
-    const legalCurrencies = {
-        USD: "USD",
-    }
 
     const [submitEnable, setSubmitEnable] = useState(false);
     const [currencyState, setCurrencyState] = useState({
         legal: true,
-        legalType: legalCurrencies.USD,
-        emojiType: emojiCurrencies.BEER,
+        legalType: CurrencyManager.legalCurrencies.USD,
+        emojiType: CurrencyManager.emojiCurrencies.BEER,
     })
     const [isIOU, setIsIOU] = useState(false);
+    const [paidByDialogOpen, setPaidByDialogOpen] = useState(false);
+    const [paidByTab, setPaidByTab] = useState("even");
+    const [checkedUsers, setCheckedUsers] = useState(initCheckedUsers());
+
+    function initCheckedUsers() {
+        let newCheckedUsers = [];
+        for (const user of newTransactionState.users) {
+            newCheckedUsers.push(user.id);
+        }
+        return newCheckedUsers;
+    }
 
     function submitAmount() {
         nextPage();
     }
 
     function populateCurrencyTypeSelect() {
-        let menu = legalCurrencies;
-        if (!currencyState.legal) {
-            menu = emojiCurrencies;
-        } 
+        const menu = currencyState.legal ? CurrencyManager.legalCurrencies : CurrencyManager.emojiCurrencies;
         return Object.entries(menu).map((entry) => {
             return <MenuItem key={entry[0]} value={entry[1]}>{entry[1]}</MenuItem>
         })
@@ -291,13 +290,63 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function updateAmount(e) {
+        const newAmt = parseFloat(e.target.value);
+        if (newAmt < 0) {
+            return;
+        }
         setNewTransactionState({
             users: newTransactionState.users,
             group: newTransactionState.group,
             currency: newTransactionState.currency,
-            total: parseInt(e.target.value),
+            total: newAmt,
             title: newTransactionState.title
         });
+    }
+
+    function handlePaidByDialogClose() {
+        setPaidByDialogOpen(false);
+    }
+
+    function getTotalString() {
+        const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        return `${typeString}${newTransactionState.total}`;
+    }
+
+    function toggleCheckedUser(userId) {
+        if (checkedUsers.includes(userId)) {
+            // Remove this user
+            setCheckedUsers(checkedUsers.filter(uid => uid !== userId));
+        } else {
+            // This is kinda ugly but need to make a new array bc of pointers!
+            let newCheckedUsers = [];
+            for (const uid of checkedUsers) {
+                newCheckedUsers.push(uid);
+            }
+            newCheckedUsers.push(userId);
+            setCheckedUsers(newCheckedUsers);
+        }
+    }
+
+    function renderPaidByTab() {
+        if (paidByTab === "even") {
+            return newTransactionState.users.map((user, index) => {
+                return (
+                    <div key={index} className="m-2 d-flex flex-row w-50 align-items-center justify-content-between">
+                        <section className="d-flex flex-row justify-content-start gap-10 align-items-center w-80">
+                            <AvatarIcon src={user.pfpUrl} displayName={user.displayName} />
+                            <div>{user.displayName}</div>
+                        </section>
+                        <section className="d-flex flex-row justify-content-end align-items-center">
+                            <Checkbox checked={checkedUsers.includes(user.id)} onChange={() => toggleCheckedUser(user.id)}></Checkbox>
+                        </section>
+                    </div>
+                ) 
+            })
+        }
+        if (paidByTab === "manual") {
+            return <div>Manual</div>;
+        }
+        return <div>Invalid paidByTab</div>;
     }
 
     return (
@@ -309,7 +358,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         <MenuItem value={true}>$</MenuItem>
                         <MenuItem value={false}>😉</MenuItem>
                     </Select>
-                    <TextField id="amount-input" type="number" label="Amount" placeholder={getTextfieldPlaceholder()} onChange={updateAmount}variant="standard"/>
+                    <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : ""} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
                     <Select id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
                     </Select>
@@ -317,7 +366,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 <section className="d-flex flex-column align-items-center gap-10">
                     <div className="d-flex flex-row gap-10 align-items-center">
                         <div className={(!newTransactionState.total) ? "light-text" : ""}>Paid by:</div>
-                        <Button disabled={!newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />}>{getPaidByButtonText()}</Button>
+                        <Button disabled={!newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />} onClick={() => setPaidByDialogOpen(true)}>{getPaidByButtonText()}</Button>
                     </div>
                     <div className="d-flex flex-row gap-10 align-items-center">
                         <div className={(isIOU || !newTransactionState.total) ? "light-text" : ""}>Split:</div>
@@ -333,7 +382,30 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                     </FormGroup>
                 </section>
             </div>
+
             <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAmount()}>Next</Button>
+            
+            
+            <Dialog fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={handlePaidByDialogClose} aria-describedby="alert-dialog-slide-description">
+                <div className="px-3 py-3 gap-10">
+                    <section className="d-flex flex-column align-items-center justify-content-center m-2">
+                        <h1>{getTotalString()}</h1>
+                        <h2>Paid By:</h2>
+                    </section>
+                    <section className="d-flex flex-column align-items-center justify-content-center m-2">
+                        <ToggleButtonGroup color="primary" value={paidByTab} exclusive onChange={e => {setPaidByTab(e.target.value)}}>
+                            <ToggleButton value="even">Even</ToggleButton>
+                            <ToggleButton value="manual">Manual</ToggleButton>
+                        </ToggleButtonGroup>
+                    </section>
+                    <section className="d-flex flex-column align-items-center justify-content-start vh-50 overflow-auto">
+                        {renderPaidByTab()}
+                    </section>
+                    <section className="d-flex flex-column align-items-center justify-content-center">
+                        <Button variant="contained" onClick={handlePaidByDialogClose} disabled={checkedUsers.length < 1}>Next</Button>
+                    </section>
+                </div>
+            </Dialog>
         </div>
 
     )
