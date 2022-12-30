@@ -8,6 +8,7 @@ import Badge from '@mui/material/Badge';
 
 // API imports
 import { DBManager } from "../../api/db/dbManager";
+import { OutlinedCard } from "./Surfaces";
 
 export function AvatarStack({ids, checked}) {
     function renderAvatarStackItems() {
@@ -132,5 +133,40 @@ export function AvatarToggle(props) {
             </div>
             { renderName() }
         </div>
+    )
+}
+
+export function AvatarCard(props) {
+
+    const [displayName, setDisplayName] = useState(props.displayName ? props.displayName : "");
+
+    useEffect(() => {
+
+        async function fetchDisplayName() {
+            if (displayName.length > 0) {
+                return
+            }
+            const userManager = DBManager.getUserManager(props.id);
+            const name = await userManager.getDisplayName();
+            setDisplayName(name);
+        }
+
+        fetchDisplayName();
+    }, [])
+
+    return (
+        <OutlinedCard>
+            <div className="m-2 d-flex flex-row">
+                <div className="w-10">
+                    <AvatarIcon id={props.id} src={props.src} />
+                </div>
+                <div className="w-70 d-flex flex-row justify-content-center align-items-center">
+                    {displayName}
+                </div>
+                <div className="w-20 d-flex flex-row justify-content-center align-items-center">
+                    {props.children}
+                </div>
+            </div>
+        </OutlinedCard>
     )
 }

@@ -10,7 +10,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import SendIcon from '@mui/icons-material/Send';
 
 // Component imports
-import { AvatarStack, AvatarIcon } from "./Avatars";
+import { AvatarStack, AvatarIcon, AvatarCard } from "./Avatars";
 import { SectionTitle } from "./Labels";
 import { Breadcrumbs } from "./Navigation";
 
@@ -393,6 +393,10 @@ export function TransactionDetail() {
     group: null,
   });
 
+  function getCurrencyPrefix() {
+    return transactionData.currency.legal ? CurrencyManager.getLegalCurrencySymbol(transactionData.currency.type) : transactionData.currency.type + " x ";
+  }
+
   useEffect(() => {
 
     async function fetchTransactionData() {
@@ -424,15 +428,62 @@ export function TransactionDetail() {
     return userIds;
   }  
 
+  function getAmountTextColor(uid) {
+    const selfBalance = transactionData.balances[uid];
+    if (selfBalance > 0) {
+      return "color-primary";
+    }
+    if (selfBalance < 0) {
+      return "text-red";
+    }
+    return "";
+  }
+
+  function renderPaidByCards() {
+    // eslint-disable-next-line array-callback-return
+    return Object.entries(transactionData.balances).map((key, index) => {
+      const uid = key[0];
+      const bal = key[1];
+      if (bal > 0) {
+        return (
+          <AvatarCard key={uid} id={uid}>
+            <div className="color-primary font-weight-bold">{getCurrencyPrefix()}{bal}</div>
+          </AvatarCard>
+        )
+      }
+    })
+  }
+
+  function renderLendorCards() {
+    // eslint-disable-next-line array-callback-return
+    return Object.entries(transactionData.balances).map((key, index) => {
+      const uid = key[0];
+      const bal = key[1];
+      if (bal < 0) {
+        return (
+          <AvatarCard key={uid} id={uid}>
+            <div className={"text-red font-weight-bold"}>{getCurrencyPrefix()}{Math.abs(bal)}</div>
+          </AvatarCard>
+        )
+      }
+    })
+  }
+
   return (
     <div className="d-flex flex-column align-items-center">
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
       <section className="d-flex flex-column align-items-center gap-10 m-5">
-        <h1>{transactionData.title}</h1>
-        <h2>{transactionData.currency.legal ? CurrencyManager.getLegalCurrencySymbol(transactionData.currency.type) : transactionData.currency.type + " x "}{transactionData.amount}</h2>
+        <h2>{transactionData.title}</h2>
+        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getCurrencyPrefix()}{transactionData.amount}</h1>
         <AvatarStack ids={getUserIds()}/>
       </section>
-      <Tooltip title="The nuclear option">      
+      <section className="d-flex flex-column w-50 justify-content-start">
+        <h2>Paid by:</h2>
+          {renderPaidByCards()}
+        <h2>Lendors:</h2>
+          {renderLendorCards()}
+      </section>
+      <Tooltip className="m-5" title="The nuclear option">      
         <Button variant="outlined" color="error" onClick={() => {handleDelete()}}>Delete this Transaction</Button>
       </Tooltip>
     </div>
