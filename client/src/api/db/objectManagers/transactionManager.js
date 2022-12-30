@@ -12,7 +12,8 @@ export class TransactionManager extends ObjectManager {
 
     fields = {
         CREATEDBY: "createdBy",
-        PAYMENTTYPE: "paymentType",
+        CURRENCYLEGAL: "currencyLegal",
+        CURRENCYTYPE: "currencyType",
         AMOUNT: "amount",
         DATE: "date",
         TITLE: "title",
@@ -22,7 +23,7 @@ export class TransactionManager extends ObjectManager {
 
     getEmptyData() {
         const empty = {
-            paymentType: null,      // {PaymentType} What type of currency was used (BEER, PIZZA, USD)
+            currency: {legal: null, type: null},           // {PaymentType} What type of currency was used (BEER, PIZZA, USD)
             amount: null,           // {number} How many of that currency was used 
             date: null,             // {date} Timestamp of transaction
             title: null,            // {string} Title of transaction
@@ -35,7 +36,8 @@ export class TransactionManager extends ObjectManager {
 
     handleAdd(change, data) {
         switch(change.field) {
-            case this.fields.PAYMENTTYPE:
+            case this.fields.CURRENCYLEGAL:
+            case this.fields.CURRENCYTYPE:
             case this.fields.CREATEDBY:
             case this.fields.AMOUNT:
             case this.fields.DATE:
@@ -52,7 +54,8 @@ export class TransactionManager extends ObjectManager {
 
     handleRemove(change, data) {
         switch(change.field) {
-            case this.fields.PAYMENTTYPE:
+            case this.fields.CURRENCYLEGAL:
+            case this.fields.CURRENCYTYPE:
             case this.fields.CREATEDBY:
             case this.fields.AMOUNT:
             case this.fields.DATE:
@@ -69,8 +72,11 @@ export class TransactionManager extends ObjectManager {
 
     handleSet(change, data) {
         switch(change.field) {
-            case this.fields.PAYMENTTYPE:
-                data.paymentType = change.value;
+            case this.fields.CURRENCYLEGAL:
+                data.currency.legal = change.value;
+                return data;
+            case this.fields.CURRENCYTYPE:
+                data.currency.type = change.value;
                 return data;
             case this.fields.CREATEDBY:
                 data.createdBy = change.value;
@@ -102,8 +108,11 @@ export class TransactionManager extends ObjectManager {
                 await super.fetchData();
             }
             switch(field) {
-                case this.fields.PAYMENTTYPE:
-                    resolve(this.data.paymentType);
+                case this.fields.CURRENCYLEGAL:
+                    resolve(this.data.currency.legal);
+                    break;
+                case this.fields.CURRENCYTYPE:
+                    resolve(this.data.currency.type);
                     break;
                 case this.fields.CREATEDBY:
                     resolve(this.data.createdBy);
@@ -135,9 +144,10 @@ export class TransactionManager extends ObjectManager {
     handleUpdate(change, data) {
         switch(change.field) {
             case this.fields.BALANCES:
-                data.relations[change.key] = change.value;
+                data.balances[change.key] = change.value;
                 return data;
-            case this.fields.PAYMENTTYPE:
+            case this.fields.CURRENCYLEGAL:
+            case this.fields.CURRENCYTYPE:
             case this.fields.CREATEDBY:
             case this.fields.AMOUNT:
             case this.fields.DATE:
@@ -153,9 +163,17 @@ export class TransactionManager extends ObjectManager {
 
     // ================= Get Operations ================= //
 
-    async getPaymentType() {
+    async getCurrencyLegal() {
         return new Promise(async (resolve, reject) => {
-            this.handleGet(this.fields.PAYMENTTYPE).then((val) => {
+            this.handleGet(this.fields.CURRENCYLEGAL).then((val) => {
+                resolve(val);
+            })
+        })
+    }
+
+    async getCurrencyType() {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.CURRENCYTYPE).then((val) => {
                 resolve(val);
             })
         })
@@ -203,9 +221,14 @@ export class TransactionManager extends ObjectManager {
     
     // ================= Set Operations ================= //
 
-    setPaymentType(newPaymentType) {
-        const paymentTypeChange = new Set(this.fields.PAYMENTTYPE, newPaymentType);
-        super.addChange(paymentTypeChange);
+    setCurrencyLegal(newCurrencyLegal) {
+        const currencyLegalChange = new Set(this.fields.CURRENCYLEGAL, newCurrencyLegal);
+        super.addChange(currencyLegalChange);
+    }
+
+    setCurrencyType(newCurrencyType) {
+        const currencyTypeChange = new Set(this.fields.CURRENCYTYPE, newCurrencyType);
+        super.addChange(currencyTypeChange);
     }
 
     setCreatedBy(newCreatedBy) {
@@ -260,23 +283,6 @@ export class TransactionManager extends ObjectManager {
     }
 
     /**
-     * Get a certain user in this transaction
-     * @param userId id of user to lookup
-     */
-    async getUser(userId) {
-        return new Promise(async (resolve, reject) => {
-            const allUsers = await this.getUsers();
-            let retVal = null;
-            for (const u of allUsers) {
-                if (u.id === userId) {
-                    retVal = u;
-                }
-            }
-            resolve(retVal);
-        })
-    }
-
-    /**
      * Add this transaction to every user in its USER array
      * @returns a promise resolved with either true or false when the pushes are complete
      */
@@ -297,130 +303,6 @@ export class TransactionManager extends ObjectManager {
             }
             // If we made it this far, we succeeded
             resolve(true);
-        })
-    }
-
-    /**
-     * Remove this transaction from every user in its USER array
-     * @returns a promise resolved with either true or false when the pushes are complete
-     */
-    async removeFromAllUsers() {
-        return new Promise(async (resolve, reject) => {
-            const transactionUsers = await this.getUsers();
-            const userIds = await this.getUserIds();
-            for (const transactionUser of transactionUsers) {
-                // Get a user manager and remove the transaction
-                const transactionUserManager = SessionManager.getUserManagerById(transactionUser.id);
-                transactionUserManager.removeTransaction(this.getDocumentId());
-                // todo: maybe find a better way to log deletions in history? 
-                await transactionUserManager.removeRelationsByTransaction(this.getDocumentId(), userIds); 
-                // Push changes to userManager
-                const pushSuccessful = await transactionUserManager.push();
-                // Make sure pushes to userManager worked
-                if (!pushSuccessful) {
-                    this.debugger.logWithPrefix("Error: User manager failed to push to database");
-                    resolve(false);
-                }
-            }
-            // If we made it this far, we succeeded
-            resolve(true);
-        })
-    }
-
-    /**
-     * Remove this transaction from the group that it references (if applicable)
-     * @returns a promise resolved true if the transaction had a group and false if not
-     */
-    async removeFromGroup() {
-        return new Promise(async (resolve, reject) => {
-            const groupManager = await this.getGroupManager();
-            if (groupManager) {
-                // This transcation was part of a group
-                await groupManager.removeTransaction(this.getDocumentId());
-                await groupManager.push();
-                resolve(true);
-            } else {
-                resolve(false);
-            }
-        })
-    }
-
-    /**
-     * Get wheteher or not the relation between two users is settled in this transaction
-     * @param {string} user1 id of first user
-     * @param {string} user2 id of second user 
-     * @returns a promise resolved with a boolean whether or not the two users are settled in this transction (or null if a relation does not exist)
-     */
-    async areUsersSettled(user1, user2) {
-        return new Promise(async (resolve, reject) => {
-            const relation = await this.getRelationForUsers(user1, user2);
-            if (relation) {
-                resolve(relation.amount === 0);
-            } else {
-                resolve(null)
-            }
-        })
-    }
-
-    /**
-     * Remove this transaction from every user in its USER array
-     * Remove all relations related to this transaction in all users
-     * @returns a promise resolved with either true or false when the pushes are complete
-     */
-    async cleanDelete() {
-        console.log("cd")
-        return new Promise(async (resolve, reject) => {
-            await this.removeFromAllUsers();
-            await this.removeFromGroup();
-            await this.deleteDocument();
-            // If we made it this far, we succeeded
-            resolve(true);
-        })
-    }
-
-    /**
-     * Get this transaction's relation between two users
-     * @param {string} user1 id of first user 
-     * @param {string} user2 id of second user 
-     * @returns a promise resolved with either true or false when the pushes are complete
-     */
-    async getRelationForUsers(user1, user2) {
-        console.log(user1)
-        console.log(user2)
-        return new Promise(async (resolve, reject) => {
-            const transactionRelations = await this.getRelations();
-            let returnRelation = null;
-            for (const r of transactionRelations) {
-                if (r.hasUser(user1) && r.hasUser(user2)) {
-                    returnRelation = r;
-                    break;
-                }
-            }
-            resolve(returnRelation);
-        })
-    }
-
-    /**
-     * Find out whether a user initially paid for a transcation
-     * @param {string} userId id of user to check
-     * @returns a promise resolve with a boolean whether or not this user iniaially paid for a transcation
-     */
-    async userIsPayer(userId) {
-        return new Promise(async (resolve, reject) => {
-            const user = await this.getUser(userId);
-            resolve(user ? user.initialBalance < 0 : false);
-        })
-    }
-
-    /**
-     * Find out whether a user initially paid for a transcation
-     * @param {string} userId id of user to check
-     * @returns a promise resolve with a boolean whether or not this user iniaially paid for a transcation
-     */
-    async userIsFronter(userId) {
-        return new Promise(async (resolve, reject) => {
-            const user = await this.getUser(userId);
-            resolve(user.initialBalance > 0);
         })
     }
 }

@@ -19,6 +19,7 @@ import { SessionManager } from "../../../api/sessionManager";
 import { CurrencyManager } from "../../../api/currencyManager";
 import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
+import { UserRelationHistory } from "../../../api/db/objectManagers/userManager";
 import { AvatarIcon, AvatarToggle } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
 import { TransactionRelation, TransactionManager, TransactionUser } from "../../../api/db/objectManagers/transactionManager";
@@ -186,7 +187,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                         const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
                         let displayName = await groupMemberUserManager.getDisplayName();
                         let pfpUrl = await groupMemberUserManager.getPfpUrl();
-                        newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl, paidByManualAmount: null, splitManuamAmount: null});
+                        newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl, paidByManualAmount: null, splitManualAmount: null});
                     }
                 }
             }
@@ -195,11 +196,11 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 // CheckedFriends is just a list of IDs, so we have to dig up the friend's full data
                 for (const friendData of userData.friends) {
                     if (friendData.id === friendId) {            
-                        newUsersList.push({id: friendData.id, displayName: friendData.displayName, pfpUrl: friendData.pfpUrl, paidByManualAmount: null, splitManuamAmount: null});
+                        newUsersList.push({id: friendData.id, displayName: friendData.displayName, pfpUrl: friendData.pfpUrl, paidByManualAmount: null, splitManualAmount: null});
                     }
                 }
             }
-            newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl(), paidByManualAmount: null, splitManuamAmount: null}); // Add self
+            newUsersList.push({id: SessionManager.getUserId(), displayName: SessionManager.getDisplayName(), pfpUrl: SessionManager.getPfpUrl(), paidByManualAmount: null, splitManualAmount: null}); // Add self
         }
         setNewTransactionState({
             users: newUsersList,
@@ -251,8 +252,110 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         return a;
     }
 
-    function submitAmount() {
-        nextPage();
+    async function submitAmount() {
+        /**
+         * Here's how the math works for determining relations between users:
+         * 
+         * For user "i", their "delta" is how much more they paid than their fair share.
+         * Delta_i = Paid_i - Share_i
+         * 
+         * The volume of the trade is the sum of all positive deltas
+         * Positive and negative deltas will have the same absolute value. To find the volume programatically
+         * I'll be adding the absolute values of all deltas (positive and negative) and then halving that value once
+         * we've iterated through all users
+         * 
+         * For users who paid less than their share (Delta_i < 0), they owe all users who paid more than their share
+         * The amount they owe each "fronter" is:
+         * Debt = Delta_i * (Delta_fronter / Volume) 
+         * 
+         * We create a relation history between these users in the amount of "Debt" and add it to both users' profiles
+         */
+        
+        // Format the users array so that everyone has their correct paidBy and split ammounts
+        let finalUsers = [];
+        let volume = 0;
+        for (const u of newTransactionState.users) {
+            if (paidByTab === "even") {
+                // Paid by was even: If this user is one of the payers, their paidByManualAmount will be 1/n the total price
+                u.paidByManualAmount = paidByCheckedUsers.includes(u.id) ? (newTransactionState.total / paidByCheckedUsers.length) : 0;
+            } // No need for an else. If paidBy was manual, the amount is already set
+            if (splitTab === "even") {
+                // Do the same thing for split
+                u.splitManualAmount = splitCheckedUsers.includes(u.id) ? (newTransactionState.total / splitCheckedUsers.length) : 0;
+            } // Still no need for an else
+            u["delta"] = u.paidByManualAmount - u.splitManualAmount; // Add delta field 
+            finalUsers.push(u); // Push user to final array
+            volume += Math.abs(u.delta);
+        }
+        volume = volume / 2;
+
+        // First, we have to create the transaction on the database so that the new transactionID can be placed into userRelationHistories
+        const transactionManager = DBManager.getTransactionManager();
+        transactionManager.setCreatedBy(SessionManager.getUserId());
+        transactionManager.setCurrencyLegal(currencyState.legal);
+        transactionManager.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
+        transactionManager.setAmount(newTransactionState.total);
+        transactionManager.setDate(new Date());
+        transactionManager.setTitle(newTransactionState.title);
+        transactionManager.setGroup(newTransactionState.group);
+        for (const u of finalUsers) {
+            transactionManager.updateBalance(u.id, u.delta);
+        }
+        await transactionManager.push();
+
+        let userManagers = {};
+
+        // Now we create all of the relations
+        for (const user1 of finalUsers) {
+            if (user1.delta < 0) {
+                // Delta_i is less than zero, so we owe all users who have a delta > 0 their share
+                for (const user2 of finalUsers) {
+                    if (user2.delta > 0) {
+                        // Found a user who paid more than their share
+                        // Create a relationHistory for user 1
+                        const h1 = new UserRelationHistory();
+                        h1.setAmount(user1.delta * (user2.delta / volume));
+                        h1.setCurrencyLegal(currencyState.legal);
+                        h1.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
+                        h1.setGroup(newTransactionState.group);
+                        h1.setTransaction(transactionManager.documentId);
+
+                        // Create a relationHistory for user2
+                        const h2 = new UserRelationHistory();
+                        h2.setAmount((user1.delta * (user2.delta / volume)) * -1);
+                        h2.setCurrencyLegal(currencyState.legal);
+                        h2.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
+                        h2.setGroup(newTransactionState.group);
+                        h2.setTransaction(transactionManager.documentId);
+
+                        // Add this relation to both users
+                        const user1Manager = userManagers[user1.id] ? userManagers[user1.id] : DBManager.getUserManager(user1.id);
+                        const user2Manager = userManagers[user2.id] ? userManagers[user2.id] : DBManager.getUserManager(user2.id);
+                        let user1Relation = await user1Manager.getRelationWithUser(user2.id);
+                        let user2Relation = await user2Manager.getRelationWithUser(user1.id);
+                        user1Relation.addHistory(h1);
+                        user2Relation.addHistory(h2);
+                        user1Manager.updateRelation(user2.id, user1Relation);
+                        user2Manager.updateRelation(user1.id, user2Relation);
+                        userManagers[user1.id] = user1Manager;
+                        userManagers[user2.id] = user2Manager;
+                    }
+                } 
+            }
+        }
+
+        let success = true;
+        for (const key of Object.entries(userManagers)) {
+            console.log(key[1]);
+            const pushed = await key[1].push();
+            console.log(key[1].data)
+            success = (success && pushed);
+        }
+
+        if (success) {
+            RouteManager.redirectToTransaction(transactionManager.documentId);
+        }
+        
     }
 
     function populateCurrencyTypeSelect() {
@@ -646,8 +749,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 </section>
             </div>
 
-            <Button variant="contained" color="primary" className="w-50" disabled={!submitEnable} onClick={() => submitAmount()}>Next</Button>
-            
+            <Button variant="contained" color="primary" className="w-50" disabled={(!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (newTransactionState.title.length <= 0) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
             
             <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">
@@ -691,6 +793,5 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 </div>
             </Dialog>
         </div>
-
     )
 }

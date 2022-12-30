@@ -98,22 +98,14 @@ export class ObjectManager {
      */
     getCollection() {
         switch(this.objectType) {
-            case DBManager.objectTypes.BOOKMARK:
-                return "bookmarks";
             case DBManager.objectTypes.GROUP:
                 return "groups";
-            case DBManager.objectTypes.TRANSACTIONATTEMPT:
-                return "transactionAttempts";
             case DBManager.objectTypes.TRANSACTION:
                 return "transactions";
             case DBManager.objectTypes.INVITATION:
                 return "invitations";
             case DBManager.objectTypes.USER:
                 return "users";
-            case DBManager.objectTypes.BADGE:
-                return "badges";
-            case DBManager.objectTypes.SESSIONPASSWORD:
-                return "sessionPasswords";
             default:
                 return null;
         }

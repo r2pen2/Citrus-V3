@@ -398,33 +398,18 @@ export function TransactionDetail() {
         RouteManager.redirect("/dashboard");
         return;
       }
+
       const tm = DBManager.getTransactionManager(transactionId);
-      await tm.fetchData();
-      // Make sure current user is in this transaction's user list
-      let foundCurrentUser = false;
-      const transactionUsers = await tm.getUsers();
-      for (const transactionUser of transactionUsers) {
-        if (transactionUser.id === SessionManager.getUserId()) {
-          foundCurrentUser = true;
-        }
-      }
-      if (!foundCurrentUser) { 
-        // If the current user wasn't found in this transaction's user list, kick them out!
-        RouteManager.redirect("/dashboard");
-      } else {
-        // Otherwise, they're in the right place! Update the transactionData with loaded data
-        const title = await tm.getTitle();
-        const total = await tm.getTotal();
-        const relations = await tm.getRelations();
-        const users = await tm.getUsers();
-        setTransactionData({
-          title: title,
-          total: total,
-          relations: relations,
-          users: users,
-          manager: tm
-        });
-      }
+      const title = await tm.getTitle();
+      const total = await tm.getTotal();
+
+      setTransactionData({
+        title: title,
+        total: total,
+        relations: [],
+        users: [],
+        manager: tm
+      });
     }
 
     // Fetch transaction data on load
