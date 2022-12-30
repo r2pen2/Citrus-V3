@@ -16,8 +16,8 @@ import OweOneDirection from "./tabs/OweOneDirection";
 import AllTransactions from "./tabs/AllTransactions";
 import Bookmarks from "./tabs/Bookmarks";
 import Transaction from "./routes/Transaction";
-import Groups from "./routes/Groups";
-import Friends from "./routes/Friends";
+import Group from "./routes/Group";
+import User from "./routes/User";
 
 // API imports
 import { RouteManager } from "../../api/routeManager";
@@ -101,8 +101,8 @@ export default function Dashboard() {
         <Routes>
           <Route path="*" element={ renderTab() }/>
           <Route path="/transactions/*" element={<Transaction />}/>
-          <Route path="/groups/*" element={<Groups />}/>
-          <Route path="/friends/*" element={<Friends />}/>
+          <Route path="/group/*" element={<Group />}/>
+          <Route path="/user/*" element={<User />}/>
         </Routes>
       </div>
       <BottomNav setShortcutActive={setShortcutActive} setBookmarksDeployed={setBookmarksDeployed}/>

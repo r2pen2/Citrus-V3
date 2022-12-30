@@ -298,7 +298,6 @@ export class UserManager extends ObjectManager {
             for (const key of Object.entries(allRelations)) {
                 if (key[0] === userId) {
                     found = true;
-                    console.log(key[1])
                     resolve(new UserRelation(key[1]));
                 }
             }
@@ -575,6 +574,14 @@ export class UserRelationHistory {
 
     setDate(date) {
         this.date = date;
+    }
+
+    getDate() {
+        return this.date;
+    }
+
+    getAmount() {
+        return this.amount;
     }
 
     getTransaction() {

@@ -42,7 +42,7 @@ export default function BottomNav({ setShortcutActive, setBookmarksDeployed }) {
   };
 
   function offBaseDashboard() {
-    return window.location.toString().includes("bookmarks") || window.location.toString().includes("group") || window.location.toString().includes("transaction");
+    return window.location.toString().includes("user") || window.location.toString().includes("group") || window.location.toString().includes("transaction");
   }
 
   /**

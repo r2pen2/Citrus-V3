@@ -1,7 +1,6 @@
 // Library imports
-import { useState, useEffect, forwardRef } from 'react';
-import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, DialogContentText, Slide, MenuItem, FormGroup, TextField, FormControlLabel, DialogActions, TableContainer, TableHead, Table, TableRow, TableCell, TableBody, Tooltip, Checkbox, IconButton, CardActionArea, Avatar } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { useState, useEffect } from 'react';
+import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -10,7 +9,6 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 // Component imports
-import { TransactionRelationList } from "../../resources/Transactions";
 import { OutlinedCard } from "../../resources/Surfaces";
 import { SectionTitle } from "../../resources/Labels";
 
@@ -20,11 +18,8 @@ import { CurrencyManager } from "../../../api/currencyManager";
 import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
 import { UserRelationHistory } from "../../../api/db/objectManagers/userManager";
-import { AvatarIcon, AvatarToggle } from '../../resources/Avatars';
+import { AvatarIcon } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
-import { TransactionRelation, TransactionManager, TransactionUser } from "../../../api/db/objectManagers/transactionManager";
-import { makeNumeric } from '../../../api/strings';
-import { Debugger } from '../../../api/debugger';
 
 // Get user mananger from LS (which we know exists becuase we made it to this page)
 const currentUserManager = SessionManager.getCurrentUserManager();
