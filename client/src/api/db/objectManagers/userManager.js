@@ -296,9 +296,10 @@ export class UserManager extends ObjectManager {
             const allRelations = await this.getRelations();
             let found = false;
             for (const key of Object.entries(allRelations)) {
-                if (key[1].user === userId) {
+                if (key[0] === userId) {
                     found = true;
-                    resolve(new UserRelation(key[1].user, key[1]));
+                    console.log(key[1])
+                    resolve(new UserRelation(key[1]));
                 }
             }
             if (!found) {
@@ -407,10 +408,13 @@ export class UserRelation {
     }
 
     addHistory(history) {
-        this.balance = this.balance += history.amount;
+        const json = history.toJson();
+        console.log(this)
+        this.balance = this.balance += json.amount;
         this.numTransactions++;
         this.lastInteracted = new Date();
-        this.history.push(history.toJson());
+        this.history.push(json);
+        console.log(this.history)
     }
 
     getHistory() {

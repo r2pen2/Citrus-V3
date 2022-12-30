@@ -346,7 +346,6 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
         let success = true;
         for (const key of Object.entries(userManagers)) {
-            console.log(key[1]);
             const pushed = await key[1].push();
             console.log(key[1].data)
             success = (success && pushed);
