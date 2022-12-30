@@ -718,7 +718,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
                 <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : "\0"}</h2>
-                <TextField id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
+                <TextField autoFocus id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
                     <Select id="currency-family-input" value={currencyState.legal} onChange={e => setCurrencyState({legal: e.target.value, legalType: currencyState.legalType, emojiType: currencyState.emojiType})} >
                         <MenuItem value={true}>$</MenuItem>

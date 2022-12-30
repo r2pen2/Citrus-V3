@@ -20,6 +20,7 @@ import { sortByDataCreatedAt } from "../../api/sorting";
 import { DBManager } from "../../api/db/dbManager";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
+import { CurrencyManager } from "../../api/currencyManager";
 
 const currentUserManager = SessionManager.getCurrentUserManager()
 
@@ -383,10 +384,10 @@ export function TransactionDetail() {
   const transactionId = params.get("id");
 
   const [transactionData, setTransactionData] = useState({
-    currency: {legal: null, type: null},
+    currency: {legal: true, type: "USD"},
     amount: null,
     date: null,
-    title: null,
+    title: "",
     balances: {},
     createdBy: null,
     group: null,
@@ -427,9 +428,8 @@ export function TransactionDetail() {
     <div className="d-flex flex-column align-items-center">
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
       <section className="d-flex flex-column align-items-center gap-10 m-5">
-        <div className="d-flex flex-row justify-content-center transaction-detail-header">
-          <Typography variant="h1">{transactionData.title}</Typography>
-        </div>
+        <h1>{transactionData.title}</h1>
+        <h2>{transactionData.currency.legal ? CurrencyManager.getLegalCurrencySymbol(transactionData.currency.type) : transactionData.currency.type + " x "}{transactionData.amount}</h2>
         <AvatarStack ids={getUserIds()}/>
       </section>
       <Tooltip title="The nuclear option">      
