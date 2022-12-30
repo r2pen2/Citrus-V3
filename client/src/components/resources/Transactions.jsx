@@ -383,11 +383,13 @@ export function TransactionDetail() {
   const transactionId = params.get("id");
 
   const [transactionData, setTransactionData] = useState({
-    title: "",
-    total: 0,
-    relations: [],
-    users: [],
-    manager: null,
+    currency: {legal: null, type: null},
+    amount: null,
+    date: null,
+    title: null,
+    balances: {},
+    createdBy: null,
+    group: null,
   });
 
   useEffect(() => {
@@ -398,61 +400,45 @@ export function TransactionDetail() {
         RouteManager.redirect("/dashboard");
         return;
       }
-
       const tm = DBManager.getTransactionManager(transactionId);
-      const title = await tm.getTitle();
-      const total = await tm.getTotal();
-
-      setTransactionData({
-        title: title,
-        total: total,
-        relations: [],
-        users: [],
-        manager: tm
-      });
+      const data = await tm.fetchData();
+      setTransactionData(data);
     }
 
     // Fetch transaction data on load
     fetchTransactionData();
   }, [transactionId])
 
-  // One of the buttons should be different whether or not we owe money in this transaction
-  function getPayButtonByRole() {
-    // First we find the current user in this transaction
-    for (const user of transactionData.users) {
-      if (user.id === SessionManager.getUserId()) {
-        // We've found the current user
-        // Then we check if we're owed money or owe money
-        if (user.initialBalance > 0) {
-          // Initial balance was positive, so we're owed money
-          return <Button variant="contained" color="primary" onClick={() => {}}>Send Reminders</Button>
-        } else {
-          // Otherwise we ove money
-          return <Button variant="contained" color="primary" onClick={() => {}}>Settle my Debts</Button>;
-        }
-      }
-    }
-  }
-
   async function handleDelete() {
-    await transactionData.manager.cleanDelete();
+    const transactionManager = DBManager.getTransactionManager(transactionId);
+    await transactionManager.cleanDelete();
     RouteManager.redirect("/dashboard");
   }
+
+  function getUserIds() {
+    let userIds = [];
+    for (const key of Object.entries(transactionData.balances)) {
+      userIds.push(key[0]);
+    }
+    return userIds;
+  }  
 
   return (
     <div className="d-flex flex-column align-items-center">
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
-      <TransactionDetailHeader title={transactionData.title} users={transactionData.users}/>
-      <TransactionRelationList relations={transactionData.relations} />
-      <div className="d-flex flex-row justify-content-between w-75 m-5">
-        { getPayButtonByRole() }
-      </div>
+      <section className="d-flex flex-column align-items-center gap-10 m-5">
+        <div className="d-flex flex-row justify-content-center transaction-detail-header">
+          <Typography variant="h1">{transactionData.title}</Typography>
+        </div>
+        <AvatarStack ids={getUserIds()}/>
+      </section>
       <Tooltip title="The nuclear option">      
         <Button variant="outlined" color="error" onClick={() => {handleDelete()}}>Delete this Transaction</Button>
       </Tooltip>
     </div>
   );
 }
+
 
 /**
  * Render a card representing a TransactionRelation
@@ -488,55 +474,4 @@ export function TransactionRelationList({relations}) {
       {mapRelations()}
     </div>
   );
-}
-
-function TransactionDetailHeader({title, users}) {
-
-  function getUserIds() {
-    let userIds = [];
-    for (const user of users) {
-      userIds.push(user.id);
-    }
-    return userIds;
-  }
-
-  function getSettledUsers() {
-    let settledUsers = [];
-    for (const user of users) {
-      if (user.settled) {
-        settledUsers.push(user.id);
-      }
-    }
-    return settledUsers;
-  }
-
-  function getOweString() {
-    // First we find the current user in this transaction
-    for (const user of users) {
-      if (user.id === SessionManager.getUserId()) {
-        // We've found the current user
-        if (user.settled) {
-          return <Typography variant="subtitle1" color="primary">You're settled in this transaction!</Typography>
-        }
-        // Then we check if we're owed money or owe money
-        if (user.initialBalance > 0) {
-          // Initial balance was positive, so we're owed money
-          return <Typography variant="subtitle1">You are still owed {showDollars(user.currentBalance)}</Typography>
-        } else {
-          // Otherwise we ove money
-          return <Typography variant="subtitle1">You still owe {showDollars(Math.abs(user.currentBalance))}</Typography>
-        }
-      }
-    }
-  }
-
-  return (
-    <div className="d-flex flex-column align-items-center gap-10">
-      <div className="d-flex flex-row justify-content-center transaction-detail-header">
-        <Typography variant="h1">{title}</Typography>
-      </div>
-      <AvatarStack ids={getUserIds()} checked={getSettledUsers()}/>
-      {getOweString()}
-    </div>
-  )
 }

@@ -1,6 +1,7 @@
 import { DBManager, Add, Remove, Set, Update } from "../dbManager";
 import { ObjectManager } from "./objectManager";
 import { SessionManager } from "../../sessionManager";
+import { UserRelation } from "./userManager";
 
 /**
  * Object Manager for transactions
@@ -218,6 +219,14 @@ export class TransactionManager extends ObjectManager {
             })
         })
     }
+
+    async getBalances() {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.BALANCES).then((val) => {
+                resolve(val);
+            })
+        })
+    }
     
     // ================= Set Operations ================= //
 
@@ -283,25 +292,28 @@ export class TransactionManager extends ObjectManager {
     }
 
     /**
-     * Add this transaction to every user in its USER array
-     * @returns a promise resolved with either true or false when the pushes are complete
+     * Delete transaction from database and remove it from all user histories
+     * @returns a promise resolved with a boolean if delete went through
      */
-    async addToAllUsers() {
+    async cleanDelete() {
         return new Promise(async (resolve, reject) => {
-            const transactionUsers = await this.getUsers();
-            for (const transactionUser of transactionUsers) {
-                // Get a user manager and add the transaction
-                const transactionUserManager = SessionManager.getUserManagerById(transactionUser.id);
-                transactionUserManager.addTransaction(this.getDocumentId());
-                // Push changes to userManager
-                const pushSuccessful = await transactionUserManager.push();
-                // Make sure pushes to userManager worked
-                if (!pushSuccessful) {
-                    this.debugger.logWithPrefix("Error: User manager failed to push to database");
+            for (const balanceKey of Object.entries(await this.getBalances())) {
+                // Get a user manager
+                const transactionUserManager = SessionManager.getUserManagerById(balanceKey[0]);
+                // Loop through all user relations for histories that have this transaction
+                const relations = await transactionUserManager.getRelations();
+                for (const relationKey of Object.entries(relations)) {
+                    const relation = new UserRelation(relationKey[1]);
+                    relation.removeHistory(this.documentId); // Transaction matches id! Remove history.
+                    transactionUserManager.updateRelation(relationKey[0], relation); // Update relation
+                }
+                const pushed = await transactionUserManager.push();
+                if (!pushed) {
                     resolve(false);
                 }
             }
             // If we made it this far, we succeeded
+            await this.deleteDocument();
             resolve(true);
         })
     }

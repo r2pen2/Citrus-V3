@@ -426,12 +426,11 @@ export class UserRelation {
      * @param {string} transactionId id of transaction to erase from history
      */
     removeHistory(transactionId) {
-        const history = this.getHistory();
-        for (const h of history) {
-            if (h.transactionId === transactionId) {
+        for (const jsonHistory of this.history) {
+            if (jsonHistory.transaction === transactionId) {
+                this.history = this.history.filter(entry => entry.transaction !== transactionId);
                 // This is the entry to remove
-                this.history = this.history.filter(entry => entry.transactionId !== transactionId);
-                this.balance = this.balance - h.amount;
+                this.balance = this.balance - jsonHistory.amount;
                 break;
             }
         }
@@ -572,6 +571,10 @@ export class UserRelationHistory {
 
     setDate(date) {
         this.date = date;
+    }
+
+    getTransaction() {
+        return this.transaction;
     }
     
     toJson() {
