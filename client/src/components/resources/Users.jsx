@@ -8,6 +8,7 @@ import { OutlinedCard } from "./Surfaces";
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
+import { EmojiBalanceBar } from "./Balances";
 
 // API imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -65,14 +66,17 @@ export function UserDetail() {
       }
 
       function renderAmount() {
-        return <h2 className={getHistoryColor()}>{CurrencyManager.getLegalCurrencySymbol(history.currency.type)}{Math.abs(history.getAmount())}</h2>
+        const amt = Math.abs(history.getAmount());
+        return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(Math.abs(amt)) : history.currency.type + " x " + amt}</h2>
       }
+
+      console.log(history)
       
       return (
         <OutlinedCard key={index}>
           <div className="w-100 m-3 d-flex flex-row align-items-center justify-content-between history-card">
             <div className="d-flex flex-column align-items-left">
-              <h2>{history.transaction}</h2>
+              <h2>{history.transactionTitle}</h2>
               <p>{getDateString(history.getDate())}</p>
             </div>
             <div className="w-20 d-flex flex-column">
@@ -89,7 +93,8 @@ export function UserDetail() {
       <section className="d-flex flex-column align-items-center m-5 gap-10">
         <AvatarIcon id={userId} size="150px"/>
         <h1>{userRelation.displayName}</h1>
-        <h1 className={getBalanceColor()}>${Math.abs(userRelation.balance)}</h1>
+        <h1 className={getBalanceColor()}>${Math.abs(userRelation.balances["USD"])}</h1>
+        <EmojiBalanceBar balances={userRelation.balances} size="large"/>
       </section>
       <section className="d-flex flex-row justify-content-between w-50 gap-10">
         <Button className="w-100" variant="contained">Settle</Button>

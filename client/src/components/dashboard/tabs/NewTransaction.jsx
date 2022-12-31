@@ -314,7 +314,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         h1.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
                         h1.setGroup(newTransactionState.group);
                         h1.setTransaction(transactionManager.documentId);
-
+                        h1.setTransactionTitle(newTransactionState.title);
+                        
                         // Create a relationHistory for user2
                         const h2 = new UserRelationHistory();
                         h2.setAmount((user1.delta * (user2.delta / volume)) * -1);
@@ -322,6 +323,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         h2.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
                         h2.setGroup(newTransactionState.group);
                         h2.setTransaction(transactionManager.documentId);
+                        h2.setTransactionTitle(newTransactionState.title);
 
                         // Add this relation to both users
                         const user1Manager = userManagers[user1.id] ? userManagers[user1.id] : DBManager.getUserManager(user1.id);
@@ -387,6 +389,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function getSplitButtonText() {
+        if (isIOU) {
+            return "IOU";
+        }
         return splitTab === "even" ? "evenly" : "manually";
     }
 
@@ -445,6 +450,11 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (reason === "backdropClick") {
             return;
         }
+        for (const u of newTransactionState.users) {
+            if (u.splitManualAmount === newTransactionState.total) {
+                setIsIOU(true);
+            }
+        }
         setSplitDialogOpen(false);
     }
 
@@ -465,6 +475,23 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             }
             newCheckedUsers.push(userId);
             setPaidByCheckedUsers(newCheckedUsers);
+        }
+    }
+
+    function toggleSplitCheckedUser(userId) {
+        if (splitCheckedUsers.includes(userId)) {
+            // Remove this user
+            setIsIOU(splitCheckedUsers.length === 2);
+            setSplitCheckedUsers(splitCheckedUsers.filter(uid => uid !== userId));
+        } else {
+            // This is kinda ugly but need to make a new array bc of pointers!
+            let newCheckedUsers = [];
+            for (const uid of splitCheckedUsers) {
+                newCheckedUsers.push(uid);
+            }
+            newCheckedUsers.push(userId);
+            setIsIOU(newCheckedUsers.length === 1);
+            setSplitCheckedUsers(newCheckedUsers);
         }
     }
 
@@ -585,7 +612,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function renderSplitTab() {
 
-        function updateUserPaidByManualAmount(e, uid) {
+        function updateUserSplitManualAmount(e, uid) {
             const amt = parseInt(e.target.value);
             if (amt < 0) {
                 return;
@@ -606,11 +633,13 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 if (!newCheckedUsers.includes(uid)) {
                     newCheckedUsers.push(uid);
                 }
+                setIsIOU(newCheckedUsers.length === 1);
                 setSplitCheckedUsers(newCheckedUsers);
             }
 
             if (amt === 0) {
                 let newCheckedUsers = splitCheckedUsers.filter(id => id !== uid);
+                setIsIOU(newCheckedUsers.length === 1);
                 setSplitCheckedUsers(newCheckedUsers);
             }
 
@@ -634,7 +663,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <Checkbox checked={splitCheckedUsers.includes(user.id)} onChange={() => togglePaidByCheckedUser(user.id)}></Checkbox>
+                        <Checkbox checked={splitCheckedUsers.includes(user.id)} onChange={() => toggleSplitCheckedUser(user.id)}></Checkbox>
                     </section>
                 </div>
             )
@@ -651,7 +680,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <TextField id="amount-input" type="number" label="Amount" value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserPaidByManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                        <TextField id="amount-input" type="number" label="Amount" value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
                     </section>
                 </div>
             )

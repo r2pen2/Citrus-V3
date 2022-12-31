@@ -12,6 +12,8 @@ import { UserRelation } from "../../api/db/objectManagers/userManager";
 import { SectionTitle } from "./Labels";
 import { AvatarIcon } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
+import { EmojiBalanceBar } from "./Balances";
+import { CurrencyManager } from "../../api/currencyManager";
 
 export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter}) {
 
@@ -102,11 +104,13 @@ export function PeopleList({relations, sortingScheme, filter}) {
 
 export function UserRelationCard({relation}) {
 
+    const legalBal = relation.balances["USD"];
+
     function getBalanceColor() {
-        if (relation.balance > 0) {
+        if (legalBal > 0) {
             return "primary";
         }
-        if (relation.balance < 0) {
+        if (legalBal < 0) {
             return "error";
         }
         return "";
@@ -124,8 +128,9 @@ export function UserRelationCard({relation}) {
                             <div className="w-100 d-flex flex-row overflow-hidden justify-content-start">
                                 <Typography variant="h1" marginLeft={"20px"}>{relation.displayName}</Typography>
                             </div>
-                            <div className="w-10">
-                              <Typography variant="h1" color={getBalanceColor()}>${Math.abs(relation.balance)}</Typography>
+                            <div className="w-10 d-flex flex-column gap-10 overflow-auto">
+                              <Typography variant="h1" color={getBalanceColor()}>{CurrencyManager.formatUSD(Math.abs(legalBal))}</Typography>
+                              <EmojiBalanceBar balances={relation.balances} size="small" />
                             </div>
                          </div>
                   </CardContent>

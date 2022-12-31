@@ -393,8 +393,8 @@ export function TransactionDetail() {
     group: null,
   });
 
-  function getCurrencyPrefix() {
-    return transactionData.currency.legal ? CurrencyManager.getLegalCurrencySymbol(transactionData.currency.type) : transactionData.currency.type + " x ";
+  function getCurrencyString(balance) {
+    return transactionData.currency.legal ? CurrencyManager.formatUSD(Math.abs(balance)) : transactionData.currency.type + " x " + Math.abs(balance);
   }
 
   useEffect(() => {
@@ -447,7 +447,7 @@ export function TransactionDetail() {
       if (bal > 0) {
         return (
           <AvatarCard key={uid} id={uid}>
-            <div className="color-primary font-weight-bold">{getCurrencyPrefix()}{bal}</div>
+            <div className="color-primary font-weight-bold">{getCurrencyString(bal)}</div>
           </AvatarCard>
         )
       }
@@ -462,7 +462,7 @@ export function TransactionDetail() {
       if (bal < 0) {
         return (
           <AvatarCard key={uid} id={uid}>
-            <div className={"text-red font-weight-bold"}>{getCurrencyPrefix()}{Math.abs(bal)}</div>
+            <div className={"text-red font-weight-bold"}>{getCurrencyString(bal)}</div>
           </AvatarCard>
         )
       }
@@ -474,7 +474,7 @@ export function TransactionDetail() {
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
       <section className="d-flex flex-column align-items-center gap-10 m-5">
         <h2>{transactionData.title}</h2>
-        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getCurrencyPrefix()}{transactionData.amount}</h1>
+        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getCurrencyString(transactionData.amount)}</h1>
         <AvatarStack ids={getUserIds()}/>
       </section>
       <section className="d-flex flex-column w-50 justify-content-start">

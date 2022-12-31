@@ -399,7 +399,7 @@ export class UserManager extends ObjectManager {
 
 export class UserRelation {
     constructor(_userRelation) {
-        this.balance = _userRelation ? _userRelation.balance : 0;
+        this.balances = _userRelation ? _userRelation.balances : {USD: 0};
         this.numTransactions = _userRelation ? _userRelation.numTransactions : 0;
         this.history = _userRelation ? _userRelation.history : [];
         this.lastInteracted = _userRelation ? _userRelation.lastInteracted : new Date();
@@ -408,8 +408,8 @@ export class UserRelation {
 
     addHistory(history) {
         const json = history.toJson();
-        console.log(this)
-        this.balance = this.balance += json.amount;
+        const balanceType = json.currency.legal ? "USD" : json.currency.type;
+        this.balances[balanceType] = (this.balances[balanceType] ? this.balances[balanceType] : 0) + json.amount;
         this.numTransactions++;
         this.lastInteracted = new Date();
         this.history.push(json);
@@ -433,7 +433,8 @@ export class UserRelation {
             if (jsonHistory.transaction === transactionId) {
                 this.history = this.history.filter(entry => entry.transaction !== transactionId);
                 // This is the entry to remove
-                this.balance = this.balance - jsonHistory.amount;
+                const balanceType = jsonHistory.currency.legal ? "USD" : jsonHistory.currency.type;
+                this.balances[balanceType] = this.balances[balanceType] - jsonHistory.amount;
                 break;
             }
         }
@@ -446,7 +447,7 @@ export class UserRelation {
 
     toJson() {
         return {
-            balance: this.balance,
+            balances: this.balances,
             numTransactions: this.numTransactions,
             history: this.history,
             lastInteracted: this.lastInteracted,
@@ -459,13 +460,13 @@ export class UserRelation {
             return userRelationArray;
         }
         userRelationArray.sort((a, b) => {
-            return b.balance - a.balance;
+            return b.balances["USD"] - a.balances["USD"];
         });
         // Separate into two arrays and spit zeros out at the bottom
         let topArray = [];
         let bottomArray = [];
         for (const userRelation of userRelationArray) {
-            if (userRelation.balance !== 0) {
+            if (userRelation.balances["USD"] !== 0) {
                 topArray.push(userRelation);
             } else {
                 bottomArray.push(userRelation);
@@ -548,12 +549,17 @@ export class UserRelationHistory {
         this.currency = _userRelationHistory ? _userRelationHistory.currency : {legal: null, type: null};      // "Currency" used in this exchange (USD? BEER? PIZZA?)
         this.amount = _userRelationHistory ? _userRelationHistory.amount : null;                // How many of that currency was used in this exchange
         this.transaction = _userRelationHistory ? _userRelationHistory.transaction : null;      // ID of this exchange's transaction
+        this.transactionTitle = _userRelationHistory ? _userRelationHistory.transactionTitle : null;      // Title of this exchange's transaction
         this.group = _userRelationHistory ? _userRelationHistory.group : null;                 // ID of this exchange's group (if applicabale)
         this.date = _userRelationHistory ? _userRelationHistory.date : new Date();              // When this exchange occured
     }
 
     setTransaction(transactionId) {
         this.transaction = transactionId;
+    }
+
+    setTransactionTitle(newTitle) {
+        this.transactionTitle = newTitle;
     }
 
     setCurrencyLegal(newLegal) {
@@ -593,6 +599,7 @@ export class UserRelationHistory {
             currency: this.currency,
             amount: this.amount,
             transaction: this.transaction,
+            transactionTitle: this.transactionTitle,
             group: this.group,
             date: this.date,
         }
