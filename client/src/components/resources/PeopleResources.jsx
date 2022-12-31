@@ -117,7 +117,7 @@ export function UserRelationCard({relation}) {
     }
 
     return (
-        <div className="user-relation-card w-100">
+        <div className="user-relation-card w-100 mb-3">
           <OutlinedCard disableMarginBottom={true}>
               <CardActionArea onClick={() => window.location = "/dashboard/user?id=" + relation.userId}>
                   <CardContent>

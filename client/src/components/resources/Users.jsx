@@ -69,15 +69,13 @@ export function UserDetail() {
         const amt = Math.abs(history.getAmount());
         return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(Math.abs(amt)) : history.currency.type + " x " + amt}</h2>
       }
-
-      console.log(history)
       
       return (
         <OutlinedCard key={index}>
           <div className="w-100 m-3 d-flex flex-row align-items-center justify-content-between history-card">
             <div className="d-flex flex-column align-items-left">
               <h2>{history.transactionTitle}</h2>
-              <p>{getDateString(history.getDate())}</p>
+              <p>{getDateString(history.date)}</p>
             </div>
             <div className="w-20 d-flex flex-column">
             {renderAmount()}

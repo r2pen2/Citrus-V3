@@ -142,9 +142,12 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (checkedGroup) {
             return;
         }
-        let newCheckedFriends = checkedFriends;
-        if (newCheckedFriends.indexOf(id) !== -1) {
-            newCheckedFriends = newCheckedFriends.filter(f => f.id === id);
+        let newCheckedFriends = [];
+        for (const f of checkedFriends) {
+            newCheckedFriends.push(f);
+        }
+        if (newCheckedFriends.includes(id)) {
+            newCheckedFriends = newCheckedFriends.filter(f => f !== id);
             setCheckedFriends(newCheckedFriends);
         } else {
             newCheckedFriends.push(id); 
@@ -389,7 +392,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function getSplitButtonText() {
-        if (isIOU) {
+        if (isIOU && newTransactionState.users.length === 2) {
             return "IOU";
         }
         return splitTab === "even" ? "evenly" : "manually";
@@ -399,6 +402,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         const newAmt = parseFloat(e.target.value);
         if (newAmt < 0) {
             return;
+        }
+        if  (!newTransactionState.currency.legal) {
+            setSplitTab(newAmt % newTransactionState.users.length !== 0 ? "manual" : "even");
         }
         setNewTransactionState({
             users: newTransactionState.users,
@@ -737,6 +743,18 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         });
     }
 
+    function renderIOUCheckbox() {
+        if (newTransactionState.users.length === 2) {
+            return (
+                <section>
+                    <FormGroup>
+                        <FormControlLabel control={<Checkbox checked={isIOU} onChange={() => setIsIOU(!isIOU)}/>} label="This is an IOU" />
+                    </FormGroup>
+                </section>
+            );
+        }
+    }
+
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
@@ -758,18 +776,12 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         <Button disabled={!newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />} onClick={() => setPaidByDialogOpen(true)}>{getPaidByButtonText()}</Button>
                     </div>
                     <div className="d-flex flex-row gap-10 align-items-center">
-                        <div className={(isIOU || !newTransactionState.total) ? "light-text" : ""}>Split:</div>
-                        <Button disabled={isIOU || !newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />} onClick={() => setSplitDialogOpen(true)}>{getSplitButtonText()}</Button>
+                        <div className={((isIOU && newTransactionState.users.length === 2) || !newTransactionState.total) ? "light-text" : ""}>Split:</div>
+                        <Button disabled={(isIOU && newTransactionState.users.length === 2) || !newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />} onClick={() => setSplitDialogOpen(true)}>{getSplitButtonText()}</Button>
                     </div>
                 </section>
-                <div>
-                    OR
-                </div>
-                <section>
-                    <FormGroup>
-                        <FormControlLabel control={<Checkbox checked={isIOU} onChange={() => setIsIOU(!isIOU)}/>} label="This is an IOU" />
-                    </FormGroup>
-                </section>
+                { newTransactionState.users.length === 2 && <div>OR</div> }
+                { renderIOUCheckbox() }
             </div>
 
             <Button variant="contained" color="primary" className="w-50" disabled={(!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (newTransactionState.title.length <= 0) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
@@ -803,7 +815,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center m-2">
                         <ToggleButtonGroup color="primary" value={splitTab} exclusive onChange={e => {setSplitTab(e.target.value)}}>
-                            <ToggleButton value="even">Even</ToggleButton>
+                            <ToggleButton value="even" disabled={newTransactionState.amount % newTransactionState.users.length !== 0}>Even</ToggleButton>
                             <ToggleButton value="manual">Manual</ToggleButton>
                         </ToggleButtonGroup>
                     </section>

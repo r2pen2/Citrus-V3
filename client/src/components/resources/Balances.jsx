@@ -34,7 +34,7 @@ export function EmojiBalanceBar({balances, size}) {
     }
     
     return (
-        <div className="d-flex flex-row w-100 overflow-auto align-items-center justify-content-center">
+        <div className="d-flex flex-row w-100 overflow-auto align-items-center gap-10 justify-content-center">
             {renderEmojis()}
         </div>
     )
