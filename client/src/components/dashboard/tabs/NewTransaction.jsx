@@ -758,15 +758,12 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
-                <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : "\0"}</h2>
+                <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : '""'}</h2>
                 <TextField autoFocus id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
-                    <Select id="currency-family-input" value={currencyState.legal} onChange={e => setCurrencyState({legal: e.target.value, legalType: currencyState.legalType, emojiType: currencyState.emojiType})} >
-                        <MenuItem value={true}>$</MenuItem>
-                        <MenuItem value={false}>😉</MenuItem>
-                    </Select>
+                    <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => setCurrencyState({legal: !currencyState.legal, legalType: currencyState.legalType, emojiType: currencyState.emojiType})}>{currencyState.legal ? "$" : "😉"}</Button>
                     <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : "\0"} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
-                    <Select id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
+                    <Select className="w-25" id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
                     </Select>
                 </section>
