@@ -21,8 +21,8 @@ export function EmojiBalanceBar({balances, size}) {
 
             if (key[0] !== "USD" && key[1] !== 0) {
                 return (
-                    <Tooltip title={getTooltip()}>
-                        <Badge key={idx} badgeContent={amt} color={key[1] > 0 ? "citrusGreen" : "citrusRed"}>
+                    <Tooltip key={idx} title={getTooltip()}>
+                        <Badge badgeContent={amt} color={key[1] > 0 ? "citrusGreen" : "citrusRed"}>
                             <div className={"emoji-badge " + size}>
                                 {key[0]}
                             </div>

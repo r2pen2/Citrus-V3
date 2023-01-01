@@ -272,15 +272,30 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         // Format the users array so that everyone has their correct paidBy and split ammounts
         let finalUsers = [];
         let volume = 0;
+        let fronterId = null;
+        if (isIOU && newTransactionState.users.length === 2) {
+            fronterId = paidByCheckedUsers[0];
+        }
+
         for (const u of newTransactionState.users) {
-            if (paidByTab === "even") {
-                // Paid by was even: If this user is one of the payers, their paidByManualAmount will be 1/n the total price
-                u.paidByManualAmount = paidByCheckedUsers.includes(u.id) ? (newTransactionState.total / paidByCheckedUsers.length) : 0;
-            } // No need for an else. If paidBy was manual, the amount is already set
-            if (splitTab === "even") {
-                // Do the same thing for split
-                u.splitManualAmount = splitCheckedUsers.includes(u.id) ? (newTransactionState.total / splitCheckedUsers.length) : 0;
-            } // Still no need for an else
+            if (fronterId) {
+                if (u.id === fronterId) {
+                    u.splitManualAmount = 0;
+                    u.paidByManualAmount = newTransactionState.total;
+                } else {
+                    u.splitManualAmount = newTransactionState.total;
+                    u.paidByManualAmount = 0;
+                }
+            } else {
+                if (paidByTab === "even") {
+                    // Paid by was even: If this user is one of the payers, their paidByManualAmount will be 1/n the total price
+                    u.paidByManualAmount = paidByCheckedUsers.includes(u.id) ? (newTransactionState.total / paidByCheckedUsers.length) : 0;
+                } // No need for an else. If paidBy was manual, the amount is already set
+                if (splitTab === "even") {
+                    // Do the same thing for split
+                    u.splitManualAmount = splitCheckedUsers.includes(u.id) ? (newTransactionState.total / splitCheckedUsers.length) : 0;
+                } // Still no need for an else
+            }
             u["delta"] = u.paidByManualAmount - u.splitManualAmount; // Add delta field 
             finalUsers.push(u); // Push user to final array
             volume += Math.abs(u.delta);
@@ -748,7 +763,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             return (
                 <section>
                     <FormGroup>
-                        <FormControlLabel control={<Checkbox checked={isIOU} onChange={() => setIsIOU(!isIOU)}/>} label="This is an IOU" />
+                        <FormControlLabel disabled={paidByCheckedUsers.length > 1} control={<Checkbox checked={isIOU} onChange={() => setIsIOU(!isIOU)}/>} label="This is an IOU" />
                     </FormGroup>
                 </section>
             );
@@ -777,7 +792,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         <Button disabled={(isIOU && newTransactionState.users.length === 2) || !newTransactionState.total} variant="contained" endIcon={<ArrowDropDownIcon />} onClick={() => setSplitDialogOpen(true)}>{getSplitButtonText()}</Button>
                     </div>
                 </section>
-                { newTransactionState.users.length === 2 && <div>OR</div> }
+                { newTransactionState.users.length === 2 && <div className={paidByCheckedUsers.length > 1 ? "light-text" : ""}>OR</div> }
                 { renderIOUCheckbox() }
             </div>
 

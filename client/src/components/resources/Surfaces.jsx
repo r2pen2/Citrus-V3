@@ -1,6 +1,8 @@
+import "./style/surfaces.scss";
+
 // Library imports
 import React from 'react'
-import { Card } from '@mui/material';
+import { Card, CardActionArea } from '@mui/material';
 
 export function ColoredCard(props) {
     function getCardStyle(color) {
@@ -48,7 +50,7 @@ export function OutlinedCard(props) {
     
     return (
     <Card variant="outlined" sx={getCardStyle()} > 
-        {props.children}
+        {props.hoverHighlight ? <CardActionArea>{props.children}</CardActionArea> : props.children }
     </Card>
   )
 }

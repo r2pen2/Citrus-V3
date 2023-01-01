@@ -71,7 +71,7 @@ export function UserDetail() {
       }
       
       return (
-        <OutlinedCard key={index}>
+        <OutlinedCard hoverHighlight={true} key={index} onClick={() => RouteManager.redirectToTransaction(history.transaction)}>
           <div className="w-100 m-3 d-flex flex-row align-items-center justify-content-between history-card">
             <div className="d-flex flex-column align-items-left">
               <h2>{history.transactionTitle}</h2>
