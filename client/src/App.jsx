@@ -26,6 +26,8 @@ import { auth } from "./api/firebase";
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
+const skipHomePage = true;
+
 function App() {
 
   // Update user when auth changes
@@ -59,8 +61,8 @@ function App() {
         <ThemeProvider theme={theme}>
           <Topbar/>
             <Routes>
-              <Route path="*" element={<HomePage />} />
-              <Route path="/home" element={<HomePage />} />
+              <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
+              <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
               <Route path="/login/*" element={<Login/>} />
               <Route path="/dashboard/*" element={<Dashboard/>} />
               <Route path="/user/*" element={<UserPage/>}/>
