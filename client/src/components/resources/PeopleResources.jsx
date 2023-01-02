@@ -3,7 +3,7 @@ import "./style/people.scss";
 
 // Library Imports
 import { useState, useEffect } from "react";
-import { Button, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, ToggleButton } from "@mui/material";
+import { Button, Chip, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, ToggleButton } from "@mui/material";
 
 // API Imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -16,17 +16,14 @@ import { EmojiBalanceBar } from "./Balances";
 import { CurrencyManager } from "../../api/currencyManager";
 
 export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter}) {
-
-    
-
-    function handleFilterChange(e) {
-          if (e.target.value === "friends") {
+    function handleFilterChange(key) {
+          if (key === "friends") {
             setFilter({
                 friends: !filter.friends,
                 others: filter.others
             })
         }
-        if (e.target.value === "others") {
+        if (key === "others") {
             setFilter({
                 friends: filter.friends,
                 others: !filter.others
@@ -52,9 +49,9 @@ export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter
                     <MenuItem value={UserRelation.sortingSchemes.DISPLAYNAME}>Alphabetically</MenuItem>
                 </Select>
             </FormControl>
-            <div className="d-flex flex-row gap-10">
-                <ToggleButton value="friends" selected={filter.friends} onClick={(e) => handleFilterChange(e)}>Friends</ToggleButton>
-                <ToggleButton value="others" selected={filter.others} onClick={(e) => handleFilterChange(e)}>Others</ToggleButton>
+            <div className="d-flex 100-h align-items-center flex-row gap-10">
+                { filter.friends ? <Chip label="Friends" color="primary" onClick={() => handleFilterChange("friends")} /> : <Chip label="Friends" onClick={() => handleFilterChange("friends")} />}
+                { filter.others ? <Chip label="Others" color="primary" onClick={() => handleFilterChange("others")} /> : <Chip label="Others" onClick={() => handleFilterChange("others")} /> }
             </div>
         </div>
         
