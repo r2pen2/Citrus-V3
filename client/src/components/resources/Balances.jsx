@@ -6,7 +6,18 @@ export function EmojiBalanceBar({balances, size}) {
 
     function renderEmojis() {
 
-        return Object.entries(balances).map((key, idx) => {
+        // First we sort balances
+        const sortedBalances = Object.keys(balances).sort().reduce(
+            (obj, key) => {
+                obj[key] = balances[key];
+                return obj;
+            },
+            {}
+        )
+        // This sorting is really fucked lmao it's not actually sorting by emoji name but instead sorting by the stringified unicode representation (I think)
+        // So ☕ is handled as U+2615 and 🍕 is U+1F355
+
+        return Object.entries(sortedBalances).map((key, idx) => {
 
             const amt = Math.abs(key[1]);
 

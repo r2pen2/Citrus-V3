@@ -418,9 +418,10 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (newAmt < 0) {
             return;
         }
-        if  (!newTransactionState.currency.legal) {
+        if  (!currencyState.legal) {
             setSplitTab(newAmt % newTransactionState.users.length !== 0 ? "manual" : "even");
         }
+        checkPaidByValidity(newAmt);
         setNewTransactionState({
             users: newTransactionState.users,
             group: newTransactionState.group,
@@ -770,13 +771,30 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
     }
 
+    function handleLegalButtonPress() {
+        if (currencyState.legal) {        
+            setSplitTab((newTransactionState.total % newTransactionState.users.length === 0) ? "even" : "manual");
+        } else {
+            setSplitTab("even");
+        }
+        setCurrencyState({legal: !currencyState.legal, legalType: currencyState.legalType, emojiType: currencyState.emojiType});
+        checkPaidByValidity(newTransactionState.total);
+    }
+
+    function checkPaidByValidity(amt) {
+        if (!currencyState.legal && amt % paidByCheckedUsers.length !== 0) {
+            // Emoji trade and numbers aren't even so we have to set paid by to be something else
+            setPaidByCheckedUsers([SessionManager.getUserId()]);
+        }
+    }
+    
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
                 <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : '""'}</h2>
                 <TextField autoFocus id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
-                    <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => setCurrencyState({legal: !currencyState.legal, legalType: currencyState.legalType, emojiType: currencyState.emojiType})}>{currencyState.legal ? "$" : "😉"}</Button>
+                    <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => handleLegalButtonPress()}>{currencyState.legal ? "$" : "😉"}</Button>
                     <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : "\0"} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
                     <Select className="w-25" id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
@@ -814,7 +832,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         { renderPaidByTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total) || (newTransactionState.total % paidByCheckedUsers.length !== 0 && !currencyState.legal)}>Next</Button>
                     </section>
                 </div>
             </Dialog>
@@ -827,7 +845,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center m-2">
                         <ToggleButtonGroup color="primary" value={splitTab} exclusive onChange={e => {setSplitTab(e.target.value)}}>
-                            <ToggleButton value="even" disabled={newTransactionState.amount % newTransactionState.users.length !== 0}>Even</ToggleButton>
+                            <ToggleButton value="even" disabled={!currencyState.legal && newTransactionState.total % newTransactionState.users.length !== 0}>Even</ToggleButton>
                             <ToggleButton value="manual">Manual</ToggleButton>
                         </ToggleButtonGroup>
                     </section>
