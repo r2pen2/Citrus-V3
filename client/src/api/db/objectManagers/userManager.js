@@ -412,7 +412,7 @@ export class UserRelation {
         this.balances[balanceType] = (this.balances[balanceType] ? this.balances[balanceType] : 0) + json.amount;
         this.numTransactions++;
         this.lastInteracted = new Date();
-        this.history.push(json);
+        this.history.unshift(json);
         console.log(this.history)
     }
 

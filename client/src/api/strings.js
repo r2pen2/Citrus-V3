@@ -4,7 +4,7 @@
  * @returns {String} date formatted as a string
  */
  export function getDateString(date) {
-    const d = new Date(date.seconds * 1000 + date.nanoseconds/1000000)
+    const d = date.seconds ? new Date(date.seconds * 1000 + date.nanoseconds/1000000) : new Date(date);
     const day = d.getUTCDate();
     const month = d.getMonth();
     const year = d.getFullYear();

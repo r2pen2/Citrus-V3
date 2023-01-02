@@ -119,9 +119,9 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     function renderGroups() {
         return userData.groups.map(group => {
             return (
-                <OutlinedCard key={"group-" + group.id} backgroundColor={(!checkedGroup || checkedGroup === group.id) ? "white" : "lightgray"}>
+                <OutlinedCard key={"group-" + group.id} backgroundColor={(!checkedGroup || checkedGroup === group.id) ? (checkedGroup === group.id ? "#BFD67955" : "white") : "lightgray"}>
                     <CardActionArea onClick={e => handleGroupCheckbox(e, group.id)}>
-                        <div className="d-flex flex-row justify-content-between">
+                        <div className="d-flex flex-row justify-content-between m-2">
                             <div className="d-flex flex-row align-items-center gap-10">
                                 <div className="d-flex flex-row align-items-center gap-10">
                                     <GroupsIcon />
@@ -159,9 +159,9 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     function renderFriends() {
         return userData.friends.map(friend => {
             return (
-                <OutlinedCard key={"friend-" + friend.id} backgroundColor={(!checkedGroup) ? "white" : "lightgray"}>
+                <OutlinedCard key={"friend-" + friend.id} backgroundColor={(!checkedGroup) ? (checkedFriends.includes(friend.id) && !checkedGroup ? "#BFD67955" : "white") : "lightgray"}>
                     <CardActionArea onClick={e => handleFriendCheckbox(e, friend.id)} >
-                        <div className="d-flex flex-row justify-content-between">
+                        <div className="d-flex flex-row justify-content-between m-2">
                             <div className="d-flex flex-row align-items-center gap-10">
                                 <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
                                 <div>{friend.displayName}</div>
@@ -308,7 +308,6 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         transactionManager.setCurrencyLegal(currencyState.legal);
         transactionManager.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
         transactionManager.setAmount(newTransactionState.total);
-        transactionManager.setDate(new Date());
         transactionManager.setTitle(newTransactionState.title);
         transactionManager.setGroup(newTransactionState.group);
         for (const u of finalUsers) {
@@ -362,7 +361,20 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         let success = true;
         for (const key of Object.entries(userManagers)) {
             const pushed = await key[1].push();
-            console.log(key[1].data)
+            success = (success && pushed);
+        }
+
+        if (newTransactionState.group) {
+            // If there's a group, add data to group
+            const groupManager = DBManager.getGroupManager(newTransactionState.group);
+            groupManager.addTransaction(transactionManager.documentId);
+            const currencyKey = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
+            for (const user of newTransactionState.users) {
+                const userBal = await groupManager.getUserBalance(user.id);
+                userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
+                groupManager.updateBalance(user.id, userBal);
+            }
+            const pushed = await groupManager.push();
             success = (success && pushed);
         }
 
@@ -410,7 +422,11 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (isIOU && newTransactionState.users.length === 2) {
             return "IOU";
         }
-        return splitTab === "even" ? "evenly" : "manually";
+        let numberString = "";
+        if (newTransactionState.users.length !== splitCheckedUsers.length) {
+            numberString = ` (${splitCheckedUsers.length}/${newTransactionState.users.length})`;
+        }
+        return splitTab === "even" ? `evenly${numberString}` : `manually${numberString}`;
     }
 
     function updateAmount(e) {

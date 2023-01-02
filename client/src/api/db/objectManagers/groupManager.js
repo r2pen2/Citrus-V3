@@ -1,4 +1,4 @@
-import { DBManager, Add, Remove, Set } from "../dbManager";
+import { DBManager, Add, Remove, Set, Update } from "../dbManager";
 import { RouteManager } from "../../routeManager";
 import { capitalizeFirstLetter } from "../../strings";
 import { ObjectManager } from "./objectManager";
@@ -20,6 +20,7 @@ export class GroupManager extends ObjectManager {
         DESCRIPTION: "description",
         TRANSACTIONS: "transactions",
         USERS: "users",
+        BALANCES: "balances",
         LINKINVITE: "linkInvite",
         QRINVITE: "qrInvite",
         CODEINVITE: "codeInvite",
@@ -33,6 +34,7 @@ export class GroupManager extends ObjectManager {
             description: null,  // {string} Description of the group
             transactions: [],   // {array <- string} IDs of every transaction associated with this group
             users: [],          // {array <- string} IDs of every user in this group
+            balances: {},       // {map <string, map>} Balances of every user in group
             invitations: {      // {map} Invitations associated with group
                 link: null,     // -- {string} Invite link to this group
                 qr: null,       // -- {string} Invite qr code for this group
@@ -92,7 +94,7 @@ export class GroupManager extends ObjectManager {
         switch(change.field) {
             case this.fields.TRANSACTIONS:
                 if (!data.transactions.includes(change.value)) {    
-                    data.transactions.push(change.value);
+                    data.transactions.unshift(change.value);
                 }
                 return data;
             case this.fields.USERS:
@@ -107,6 +109,7 @@ export class GroupManager extends ObjectManager {
             case this.fields.CODEINVITE:
             case this.fields.LINKINVITE:
             case this.fields.QRINVITE:
+            case this.fields.BALANCES:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -130,6 +133,7 @@ export class GroupManager extends ObjectManager {
             case this.fields.CODEINVITE:
             case this.fields.LINKINVITE:
             case this.fields.QRINVITE:
+            case this.fields.BALANCES:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -163,6 +167,29 @@ export class GroupManager extends ObjectManager {
                 return data;
             case this.fields.TRANSACTIONS:
             case this.fields.USERS:
+            case this.fields.BALANCES:
+                super.logInvalidChangeType(change);
+                return data;
+            default:
+                super.logInvalidChangeField(change);
+                return data;
+        }
+    }
+
+    handleUpdate(change, data) {
+        switch(change.field) {
+            case this.fields.BALANCES:
+                data.balances[change.key] = change.value;
+                return data;
+            case this.fields.CREATEDAT:
+            case this.fields.CREATEDBY:
+            case this.fields.NAME:
+            case this.fields.DESCRIPTION:
+            case this.fields.CODEINVITE:
+            case this.fields.LINKINVITE:
+            case this.fields.QRINVITE:
+            case this.fields.TRANSACTIONS:
+            case this.fields.USERS:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -194,6 +221,9 @@ export class GroupManager extends ObjectManager {
                     break;
                 case this.fields.USERS:
                     resolve(this.data.users);
+                    break;
+                case this.fields.BALANCES:
+                    resolve(this.data.balances);
                     break;
                 case this.fields.LINKINVITE:
                     resolve(this.data.invitations.link);
@@ -285,29 +315,19 @@ export class GroupManager extends ObjectManager {
         })
     }
     
-    /**
-     * Get user's total current debt in this group
-     * @param {string} userId id of user to get debt for
-     */
-    async getUserDebt(userId) {
+    async getBalances() {
         return new Promise(async (resolve, reject) => {
-            const groupTransactions = await this.getTransactions();
-            let total = 0;
-            for (const transactionId of groupTransactions) {
-                const transactionManager = DBManager.getTransactionManager(transactionId);
-                const transactionRelations = await transactionManager.getRelations();
-                for (const relation of transactionRelations) {
-                    if (relation.to.id === userId) {
-                        // User is in this relation and is owed money
-                        total += relation.amount;
-                    }
-                    if (relation.from.id === userId) {
-                        // User is in this relation and owes money
-                        total -= relation.amount;
-                    }
-                }
-            }
-            resolve(total);
+            this.handleGet(this.fields.BALANCES).then((val) => {
+                resolve(val);
+            })
+        })
+    }
+    
+    async getUserBalance(userId) {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.BALANCES).then((val) => {
+                resolve(val[userId] ? val[userId] : {});
+            })
         })
     }
 
@@ -388,5 +408,11 @@ export class GroupManager extends ObjectManager {
     removeInvitation(invitationId) {
         const invitationRemoval = new Remove(this.fields.INVITATIONS, invitationId);
         super.addChange(invitationRemoval);
+    }
+
+    // ================= Update Operation ================= // 
+    updateBalance(key, balance) {
+        const balanceUpdate = new Update(this.fields.BALANCES, key, balance);
+        super.addChange(balanceUpdate);
     }
 }

@@ -26,7 +26,7 @@ export class TransactionManager extends ObjectManager {
         const empty = {
             currency: {legal: null, type: null},           // {PaymentType} What type of currency was used (BEER, PIZZA, USD)
             amount: null,           // {number} How many of that currency was used 
-            date: null,             // {date} Timestamp of transaction
+            date: new Date(),       // {date} Timestamp of transaction
             title: null,            // {string} Title of transaction
             balances: {},           // {map<string, number>} Map relating usedIds to how much they are owed/owe for this transaction
             createdBy: null,        // {string} ID of user that created this transaction

@@ -103,13 +103,13 @@ export function AvatarIcon(props) {
     // If we've declared a size, return one with sx attr
     if (props.size) {    
         return (
-            <Tooltip title={props.showTooltip ? props.displayName : ""}>
+            <Tooltip className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
                 <Avatar src={pfpUrl} alt={displayName} sx={{width: props.size, height: props.size}} />
             </Tooltip>
         )
     }
     return (
-        <Tooltip title={props.showTooltip ? props.displayName : ""}>
+        <Tooltip className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
             <Avatar src={pfpUrl} alt={displayName}/>
         </Tooltip>
     )
