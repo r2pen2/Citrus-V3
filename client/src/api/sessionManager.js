@@ -29,63 +29,16 @@ export class SessionManager {
     }
 
     /**
-     * Get UserManager saved in localStorage or make a new one
-     * @returns UserManager from LocalStorage, new UserManager from ID in LocalStorage, or if neither of those keys exist.
-     * @usage This method is frequently called at the TOP of a component's file. There's no need for it to be called again when anything updates beacuase it effectively
-     * keeps track of itself. Putting this method inside a component will make the component fetch a new UserManager from LocalStorage any time anything changes.
-     * That's not REALLY a problem, but it's bad practice and clutters the shit out of the console.
+     * Get UserManager for current user
+     * @returns UserManager for current user in LocalStorage
      */
     static getCurrentUserManager() {
-        const data = JSON.parse(localStorage.getItem("citrus:currentUserManagerData"));
-        if (data) {
-            sessionManagerDebugger.logWithPrefix("Found current user manager!");
-            // This is kinda fucked...
-            // We have to harvest the data from the found manager and put it into a new one
-            // Just a quirk of how localStorage handles classes. Without doing this we'd get an object with no methods attached to it
-            // for whatever reason >:(
-            return DBManager.createUserManagerFromLocalStorage(this.getUserId(), data);
-            // Holy shit that worked! This is kind of an ugly solution but hey, it's only gross under the hood. 
-        }
-        sessionManagerDebugger.logWithPrefix("Couldn't find a current user object manager. Making a new one...");
         const id = this.getUserId(); // Get user ID from LS
-        if (!id) {
-            sessionManagerDebugger.logWithPrefix("Couldn't find a current user Id. Redirecting to /login!'");
-            return null;
+        if (id) {
+            return DBManager.getUserManager(id);
         }
-        const newManager = DBManager.getUserManager(id);
-        SessionManager.setCurrentUserManager(newManager);
-        return newManager;
-    }
-
-    /**
-     * Set UserManager saved in localStorage
-     */
-    static setCurrentUserManager(manager) {
-        // Here's a magic trick! We're actually just saving the data field from this userManager.
-        localStorage.setItem("citrus:currentUserManagerData", JSON.stringify(manager.data));
-    }
-
-    /**
-     * Takes a user manager and sets the currentUserManager if id matches the one in localStorage
-     * @param {UserManager} manager UserManager to compare ID
-     */
-    static updateCurrentUserManager(manager) {
-        if (manager.documentId === SessionManager.getUserId()) {
-            SessionManager.setCurrentUserManager(manager);
-        }
-    }
-
-    /**
-     * Gets a user manager, either new or from localStorage if userId matches
-     * @param {string} userId id of user to get manager for
-     * @returns UserManager for userId
-     */
-    static getUserManagerById(userId) {
-        if (userId === SessionManager.getUserId()) {
-            return SessionManager.getCurrentUserManager();
-        } else {
-            return DBManager.getUserManager(userId);
-        }
+        sessionManagerDebugger.logWithPrefix("Couldn't find a current user Id. Redirecting to /login!'");
+        return null;
     }
 
     /**

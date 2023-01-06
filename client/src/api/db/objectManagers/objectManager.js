@@ -289,10 +289,6 @@ export class ObjectManager {
                         this.docRef = newDoc;
                         this.debugger.logWithPrefix('Created new object of type" ' + this.objectType + '" with id "' + this.documentId + '"');
                     }
-                    // Check if this is the current user
-                    if (this.objectType === DBManager.objectTypes.USER) {
-                        SessionManager.updateCurrentUserManager(this);
-                    }
                     resolve(this.docRef);
                 } else {
                     this.debugger.logWithPrefix("No changes were made to: " + this.toString());

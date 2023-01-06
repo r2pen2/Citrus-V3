@@ -21,9 +21,6 @@ import { UserRelationHistory } from "../../../api/db/objectManagers/userManager"
 import { AvatarIcon } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
 
-// Get user mananger from LS (which we know exists becuase we made it to this page)
-const currentUserManager = SessionManager.getCurrentUserManager();
-
 /**
  * Wrapper component for new transaction
  * @param {Props} props Currently unused
@@ -73,6 +70,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     useEffect(() => {
         async function fetchUserData() {
+            const currentUserManager = SessionManager.getCurrentUserManager();
             let friendIds = await currentUserManager.getFriends();
             let groupIds = await currentUserManager.getGroups();
             let newFriends = [];
@@ -99,7 +97,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
         fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUserManager])
+    }, [])
 
     function renderRecents() {
         return <div></div>

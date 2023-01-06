@@ -22,8 +22,6 @@ import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { CurrencyManager } from "../../api/currencyManager";
 
-const currentUserManager = SessionManager.getCurrentUserManager()
-
 export function TransactionList(props) {
 
   const bracketNames = ["Today", "Yesterday", "This Week", "This Month", "This Year", "Older"];
@@ -35,46 +33,47 @@ export function TransactionList(props) {
   // Fetch transactions on mount
   useEffect(() => {
     async function fetchUserTransactions() {
-        // Get all transaction IDs that user is in
-        await currentUserManager.fetchData();
-        let transactionIds = await currentUserManager.getTransactions();
-        let newTransactionManagers = [];
-        for (const transactionId of transactionIds) {
-            const transactionManager = DBManager.getTransactionManager(transactionId);
-            await transactionManager.fetchData();
-            newTransactionManagers.push(transactionManager);
+      // Get all transaction IDs that user is in
+      const currentUserManager = SessionManager.getCurrentUserManager();
+      await currentUserManager.fetchData();
+      let transactionIds = await currentUserManager.getTransactions();
+      let newTransactionManagers = [];
+      for (const transactionId of transactionIds) {
+          const transactionManager = DBManager.getTransactionManager(transactionId);
+          await transactionManager.fetchData();
+          newTransactionManagers.push(transactionManager);
+      }
+      newTransactionManagers = sortByDataCreatedAt(newTransactionManagers);
+      if (props.numDisplayed) { // Throw out extra transactions if we're limiting the number we're displaying
+          newTransactionManagers = newTransactionManagers.slice(0, props.numDisplayed);
+      }
+      // Sort transactionManagers into brackets
+      const day = 86400000;
+      let newBrackets = [[], [], [], [], [], []];
+      for (const transactionManager of newTransactionManagers) {
+        const ageInDays = (new Date().getTime() - new Date(transactionManager.createdAt).getTime() / day);
+        if (ageInDays <= 1) {
+          newBrackets[0].push(transactionManager);
+        } else if (ageInDays <= 2) {
+          newBrackets[1].push(transactionManager);
+        } else if (ageInDays <= 7) {
+          newBrackets[2].push(transactionManager);
+        } else if (ageInDays <= 30) {
+          newBrackets[3].push(transactionManager);
+        } else if (ageInDays <= 365) {
+          newBrackets[4].push(transactionManager);
+        } else {
+          newBrackets[5].push(transactionManager);
         }
-        newTransactionManagers = sortByDataCreatedAt(newTransactionManagers);
-        if (props.numDisplayed) { // Throw out extra transactions if we're limiting the number we're displaying
-            newTransactionManagers = newTransactionManagers.slice(0, props.numDisplayed);
-        }
-        // Sort transactionManagers into brackets
-        const day = 86400000;
-        let newBrackets = [[], [], [], [], [], []];
-        for (const transactionManager of newTransactionManagers) {
-          const ageInDays = (new Date().getTime() - new Date(transactionManager.createdAt).getTime() / day);
-          if (ageInDays <= 1) {
-            newBrackets[0].push(transactionManager);
-          } else if (ageInDays <= 2) {
-            newBrackets[1].push(transactionManager);
-          } else if (ageInDays <= 7) {
-            newBrackets[2].push(transactionManager);
-          } else if (ageInDays <= 30) {
-            newBrackets[3].push(transactionManager);
-          } else if (ageInDays <= 365) {
-            newBrackets[4].push(transactionManager);
-          } else {
-            newBrackets[5].push(transactionManager);
-          }
-        }
-        // Set state
-        setListState({
-          numFetched: newTransactionManagers.length,
-          brackets: newBrackets
-        })
-        setTimeout(() => {
-          fetchUserTransactions()
-        }, 1000);
+      }
+      // Set state
+      setListState({
+        numFetched: newTransactionManagers.length,
+        brackets: newBrackets
+      })
+      setTimeout(() => {
+        fetchUserTransactions()
+      }, 1000);
     }
 
     fetchUserTransactions();
@@ -272,6 +271,7 @@ export function TransactionCard({transactionManager}) {
     async function handleSettleSend() {
       const amt = document.getElementById(settleInputId).value;
       // If the initialBalance is positive, this user owes money. The one sending the settlement should be the one who owes money.
+      const currentUserManager = SessionManager.getCurrentUserManager();
       const fromUser = context.initialBalance > 0 ? currentUserManager : DBManager.getUserManager(settleState.userSelected);
       const toUser = context.initialBalance > 0 ? settleState.userSelected : SessionManager.getUserId();
       await fromUser.settleWithUserInTransaction(toUser, transactionManager.getDocumentId(), parseInt(amt));

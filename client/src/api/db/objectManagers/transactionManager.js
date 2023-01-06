@@ -299,7 +299,7 @@ export class TransactionManager extends ObjectManager {
         return new Promise(async (resolve, reject) => {
             for (const balanceKey of Object.entries(await this.getBalances())) {
                 // Get a user manager
-                const transactionUserManager = SessionManager.getUserManagerById(balanceKey[0]);
+                const transactionUserManager = DBManager.getUserManager(balanceKey[0]);
                 // Loop through all user relations for histories that have this transaction
                 const relations = await transactionUserManager.getRelations();
                 for (const relationKey of Object.entries(relations)) {
