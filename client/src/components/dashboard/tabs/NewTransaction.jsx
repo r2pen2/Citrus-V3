@@ -426,6 +426,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (newTransactionState.users.length !== splitCheckedUsers.length) {
             numberString = ` (${splitCheckedUsers.length}/${newTransactionState.users.length})`;
         }
+        if (splitTab === "manual" && getTotalSplitAmounts() !== newTransactionState.total) {
+            return "manually (!)"
+        }
         return splitTab === "even" ? `evenly${numberString}` : `manually${numberString}`;
     }
 
@@ -478,16 +481,10 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function handlePaidByDialogClose(event, reason) {
-        if (reason === "backdropClick") {
-            return;
-        }
         setPaidByDialogOpen(false);
     }
 
     function handleSplitDialogClose(event, reason) {
-        if (reason === "backdropClick") {
-            return;
-        }
         for (const u of newTransactionState.users) {
             if (u.splitManualAmount === newTransactionState.total) {
                 setIsIOU(true);
@@ -830,7 +827,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 { renderIOUCheckbox() }
             </div>
 
-            <Button variant="contained" color="primary" className="w-50" disabled={(!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (newTransactionState.title.length <= 0) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
+            <Button variant="contained" color="primary" className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (newTransactionState.title.length <= 0) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
             
             <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">
