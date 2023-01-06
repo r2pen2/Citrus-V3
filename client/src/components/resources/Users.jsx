@@ -14,7 +14,6 @@ import { EmojiBalanceBar, HistoryBalanceLabel, RelationBalanceLabel } from "./Ba
 
 // API imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
-import { DBManager } from "../../api/db/dbManager";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { getDateString } from "../../api/strings";
@@ -40,30 +39,10 @@ export function UserDetail() {
 
     // Fetch transaction data on load
     fetchTransactionData();
-  }, [userId])
-
-  function getBalanceColor() {
-    if (userRelation.balances["USD"] > 0) {
-      return "color-primary";
-    }
-    if (userRelation.balances["USD"] < 0) {
-      return "text-red";
-    }
-    return "";
-  }
+  }, [userId]);
 
   function renderHistory() {
     return userRelation.getHistory().map((history, index) => {
-      
-      function getHistoryColor() {
-        if (history.getAmount() > 0) {
-          return "color-primary";
-        }
-        if (history.getAmount() < 0) {
-          return "text-red";
-        }
-        return "";
-      }
 
       function renderIcon() {
         return (

@@ -14,50 +14,6 @@ import { AvatarIcon } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
 import { EmojiBalanceBar, RelationBalanceLabel } from "./Balances";
 
-export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter}) {
-
-    function handleFilterChange(e) {
-          if (e.target.value === "friends") {
-            setFilter({
-                friends: !filter.friends,
-                others: filter.others
-            })
-        }
-        if (e.target.value === "others") {
-            setFilter({
-                friends: filter.friends,
-                others: !filter.others
-            })
-        }
-    }
-
-    return (
-        <div className="d-flex flex-row justify-content-between">
-            <FormControl className="sort-select-box w-100">
-                <InputLabel id="sort-select-label">Sort By:</InputLabel>
-                <Select 
-                    value={sortingScheme} 
-                    labelId="sort-select-label" 
-                    onChange={(e) => setSortingScheme(e.target.value)} 
-                    label="Sort By:"
-                    className="w-25"
-                >
-                    <MenuItem value={UserRelation.sortingSchemes.BALANCE}>Balance</MenuItem>
-                    <MenuItem value={UserRelation.sortingSchemes.ABSOLUTEVALUE}>Balance (Absolute Value)</MenuItem>
-                    <MenuItem value={UserRelation.sortingSchemes.LASTINTERACTED}>Last Interacted</MenuItem>
-                    <MenuItem value={UserRelation.sortingSchemes.NUMTRANSACTIONS}>Total Transactions</MenuItem>
-                    <MenuItem value={UserRelation.sortingSchemes.DISPLAYNAME}>Alphabetically</MenuItem>
-                </Select>
-            </FormControl>
-            <div className="d-flex flex-row gap-10">
-                <ToggleButton value="friends" selected={filter.friends} onClick={(e) => handleFilterChange(e)}>Friends</ToggleButton>
-                <ToggleButton value="others" selected={filter.others} onClick={(e) => handleFilterChange(e)}>Others</ToggleButton>
-            </div>
-        </div>
-        
-    )
-}
-
 export function PeopleList({relations, sortingScheme, filter}) {
 
     function renderRelationCards(relevantRelations, doLoad) {

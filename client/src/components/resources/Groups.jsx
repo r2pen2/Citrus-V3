@@ -8,7 +8,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 // Component Imports
 import {Breadcrumbs} from "./Navigation";
-import {AvatarStack} from "./Avatars"
+import { AvatarStack } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
 
 // API Imports
@@ -17,6 +17,7 @@ import { showDollars } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
 import { SectionTitle } from "./Labels";
+import { UserRelation } from "../../api/db/objectManagers/userManager";
 
 // Get user manager from LS
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -274,69 +275,6 @@ export function GroupAdd() {
         </div>
       </div>
     );
-}
-
-export function GroupList() {
-
-    const [groupsData, setGroupsData] = useState({
-        fetched: false,
-        groups: [],
-    });
-
-    useEffect(() => {
-        async function fetchGroupData() {
-          currentUserManager.fetchData();
-          const groupIds = await currentUserManager.getGroups();
-          setGroupsData({
-              fetched: true,
-              groups: groupIds,
-          });
-          setTimeout(() => {
-            fetchGroupData();
-          }, 1000);
-        }
-
-        fetchGroupData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    function renderGroupList() {
-
-      function renderCards() {
-        return groupsData.groups.map((group, index) => {
-          return <GroupPreviewCard key={index} groupId={group.id}/>
-        })
-      }
-
-        if (groupsData.groups.length > 0) {
-            return (
-              <section className="d-flex flex-row justify-content-center w-100">
-                <SectionTitle title="Groups" >
-                  <Button variant="contained">Add Friends</Button>
-                </SectionTitle >
-                { renderCards() }
-              </section>
-            )
-        } 
-        if (groupsData.fetched) {
-            return (
-                <section className="d-flex flex-row justify-content-center w-100">
-                    <Typography >User has no groups.</Typography>
-                </section>
-            )
-        }
-        return (
-            <section className="d-flex flex-row justify-content-center w-100">
-                <CircularProgress/>
-            </section>
-        )
-    }
-
-    return (
-        <div className="d-flex flex-column mh-100 align-items-center gap-10">
-            { renderGroupList() }
-        </div>
-    )
 }
 
 export function GroupPreviewCard({name, users, userDebt}) { 

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 
 // Component imports
 import { Breadcrumbs } from "../../resources/Navigation";
-import { SortSelector, PeopleList } from "../../resources/PeopleResources";
+import { PeopleList } from "../../resources/PeopleResources";
+import { SortSelector } from "../../resources/Misc";
 
 // API imports
 import { SessionManager } from "../../../api/sessionManager";
