@@ -1,15 +1,17 @@
 import "./style/balances.scss";
 import Badge from '@mui/material/Badge';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { CurrencyManager } from "../../api/currencyManager"; 
 
-export function EmojiBalanceBar({balances, size}) {
+export function EmojiBalanceBar({relation, size}) {
 
     function renderEmojis() {
 
         // First we sort balances
-        const sortedBalances = Object.keys(balances).sort().reduce(
+        const sortedBalances = Object.keys(relation.balances).sort().reduce(
             (obj, key) => {
-                obj[key] = balances[key];
+                obj[key] = relation.balances[key];
                 return obj;
             },
             {}
@@ -49,4 +51,38 @@ export function EmojiBalanceBar({balances, size}) {
             {renderEmojis()}
         </div>
     )
+}
+
+export function HistoryBalanceLabel({history}) {
+
+    const amt = history.getAmount();
+  
+    function getHistoryColor() {
+        if (amt > 0) {
+          return "color-primary";
+        }
+        if (amt < 0) {
+          return "text-red";
+        }
+        return "";
+    }
+
+    return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(amt) : history.currency.type + " x " + amt}</h2>;
+}
+
+export function RelationBalanceLabel({relation, size}) {
+
+    const legalBal = relation.balances["USD"];
+
+    function getBalanceColor() {
+        if (legalBal > 0) {
+            return "primary";
+        }
+        if (legalBal < 0) {
+            return "error";
+        }
+        return "";
+    }
+
+    return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
 }

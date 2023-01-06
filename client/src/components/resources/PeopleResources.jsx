@@ -3,7 +3,7 @@ import "./style/people.scss";
 
 // Library Imports
 import { useState, useEffect } from "react";
-import { Button, Chip, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, ToggleButton } from "@mui/material";
+import { Button, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, ToggleButton } from "@mui/material";
 
 // API Imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -12,18 +12,18 @@ import { UserRelation } from "../../api/db/objectManagers/userManager";
 import { SectionTitle } from "./Labels";
 import { AvatarIcon } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
-import { EmojiBalanceBar } from "./Balances";
-import { CurrencyManager } from "../../api/currencyManager";
+import { EmojiBalanceBar, RelationBalanceLabel } from "./Balances";
 
 export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter}) {
-    function handleFilterChange(key) {
-          if (key === "friends") {
+
+    function handleFilterChange(e) {
+          if (e.target.value === "friends") {
             setFilter({
                 friends: !filter.friends,
                 others: filter.others
             })
         }
-        if (key === "others") {
+        if (e.target.value === "others") {
             setFilter({
                 friends: filter.friends,
                 others: !filter.others
@@ -49,9 +49,9 @@ export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter
                     <MenuItem value={UserRelation.sortingSchemes.DISPLAYNAME}>Alphabetically</MenuItem>
                 </Select>
             </FormControl>
-            <div className="d-flex 100-h align-items-center flex-row gap-10">
-                { filter.friends ? <Chip label="Friends" color="primary" onClick={() => handleFilterChange("friends")} /> : <Chip label="Friends" onClick={() => handleFilterChange("friends")} />}
-                { filter.others ? <Chip label="Others" color="primary" onClick={() => handleFilterChange("others")} /> : <Chip label="Others" onClick={() => handleFilterChange("others")} /> }
+            <div className="d-flex flex-row gap-10">
+                <ToggleButton value="friends" selected={filter.friends} onClick={(e) => handleFilterChange(e)}>Friends</ToggleButton>
+                <ToggleButton value="others" selected={filter.others} onClick={(e) => handleFilterChange(e)}>Others</ToggleButton>
             </div>
         </div>
         
@@ -101,18 +101,6 @@ export function PeopleList({relations, sortingScheme, filter}) {
 
 export function UserRelationCard({relation}) {
 
-    const legalBal = relation.balances["USD"];
-
-    function getBalanceColor() {
-        if (legalBal > 0) {
-            return "primary";
-        }
-        if (legalBal < 0) {
-            return "error";
-        }
-        return "";
-    }
-
     return (
         <div className="user-relation-card w-100 mb-3">
           <OutlinedCard disableMarginBottom={true}>
@@ -126,8 +114,8 @@ export function UserRelationCard({relation}) {
                                 <Typography variant="h1" marginLeft={"20px"}>{relation.displayName}</Typography>
                             </div>
                             <div className="w-10 d-flex flex-column gap-10 overflow-auto">
-                              <Typography variant="h1" color={getBalanceColor()}>{CurrencyManager.formatUSD(Math.abs(legalBal))}</Typography>
-                              <EmojiBalanceBar balances={relation.balances} size="small" />
+                                <RelationBalanceLabel relation={relation} size="small" />
+                                <EmojiBalanceBar relation={relation} size="small" />
                             </div>
                          </div>
                   </CardContent>
