@@ -48,6 +48,14 @@ export function OutlinedCard(props) {
         }
     }
     
+    if (props.onClick) {
+      return (
+        <Card onClick={props.onClick} variant="outlined" sx={getCardStyle()} > 
+            {props.hoverHighlight ? <CardActionArea>{props.children}</CardActionArea> : props.children }
+        </Card>
+      )
+    }
+
     return (
     <Card variant="outlined" sx={getCardStyle()} > 
         {props.hoverHighlight ? <CardActionArea>{props.children}</CardActionArea> : props.children }

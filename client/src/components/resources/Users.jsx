@@ -2,9 +2,11 @@
 import "./style/users.scss";
 
 // Library imports
-import { Button } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 import { useState, useEffect} from 'react';
 import { OutlinedCard } from "./Surfaces";
+import GroupsIcon from '@mui/icons-material/Groups';
+import HandshakeIcon from '@mui/icons-material/Handshake';
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
@@ -69,16 +71,33 @@ export function UserDetail() {
         const amt = Math.abs(history.getAmount());
         return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(Math.abs(amt)) : history.currency.type + " x " + amt}</h2>
       }
+
+      function renderIcon() {
+        return (
+          <Tooltip placement="left" title={history.group ? "This was a group transaction" : "This was a transaction between friends"} >
+            { history.group ? <GroupsIcon /> : <HandshakeIcon /> }
+          </Tooltip>
+        )
+      }
+
+      function handleClick(e) {
+        RouteManager.redirectToTransaction(history.transaction);
+      }
       
       return (
-        <OutlinedCard hoverHighlight={true} key={index} onClick={() => RouteManager.redirectToTransaction(history.transaction)}>
+        <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
           <div className="w-100 m-3 d-flex flex-row align-items-center justify-content-between history-card">
             <div className="d-flex flex-column align-items-left">
-              <h2>{history.transactionTitle}</h2>
+              <div className="d-flex flex-row align-items-center gap-10">
+                { renderIcon() }
+                <h2>
+                  { history.transactionTitle }
+                </h2>
+              </div>
               <p>{getDateString(history.date)}</p>
-            </div>
-            <div className="w-20 d-flex flex-column">
-            {renderAmount()}
+            </div>    
+            <div className="w-20 d-flex flex-column overflow-auto">
+              { renderAmount() }
             </div>
           </div>
         </OutlinedCard>

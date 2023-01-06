@@ -9,6 +9,8 @@ import Badge from '@mui/material/Badge';
 // API imports
 import { DBManager } from "../../api/db/dbManager";
 import { OutlinedCard } from "./Surfaces";
+import { SessionManager } from "../../api/sessionManager";
+import { RouteManager } from "../../api/routeManager";
 
 export function AvatarStack({ids, checked}) {
     function renderAvatarStackItems() {
@@ -154,8 +156,14 @@ export function AvatarCard(props) {
         fetchDisplayName();
     }, [])
 
+    function handleClick(e) {
+        if (props.id !== SessionManager.getUserId()) {
+            RouteManager.redirectToUser(props.id);
+        }
+    }
+
     return (
-        <OutlinedCard>
+        <OutlinedCard hoverHighlight={true} onClick={handleClick}>
             <div className="m-2 d-flex flex-row">
                 <div className="w-10">
                     <AvatarIcon id={props.id} src={props.src} />

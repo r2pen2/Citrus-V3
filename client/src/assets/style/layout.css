@@ -61,6 +61,14 @@
     padding: 10px;
 }
 
+.w-10 {
+    width: 10%;
+}
+
+.w-60 {
+    width: 60%;
+}
+
 .w-80 {
     width: 80%;
 }

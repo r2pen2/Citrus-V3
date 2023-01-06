@@ -103,6 +103,14 @@ export class RouteManager {
     }
 
     /**
+     * Redirect user to a user's relation with another user by ID
+     * @param {string} userId id of user to view history of
+     */
+    static redirectToUser(userId) {
+        RouteManager.redirect(`/dashboard/user?id=${userId}`);
+    }
+
+    /**
      * Get current hostname for Citrus Financial
      */
     static getHostName() {
