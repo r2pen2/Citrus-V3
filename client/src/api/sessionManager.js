@@ -145,7 +145,6 @@ export class SessionManager {
         localStorage.removeItem("citrus:debug");
         localStorage.removeItem("citrus:pfpUrl");
         localStorage.removeItem("citrus:displayName");
-        localStorage.removeItem("citrus:currentUserManager");
     }
 
     /**
@@ -160,7 +159,6 @@ export class SessionManager {
             displayName: this.getDisplayName(),
             debugMode: this.getDebugMode(),
             userId: this.getUserId(),
-            currentUserManager: this.getCurrentUserManager()
         }
     }
 
@@ -171,14 +169,5 @@ export class SessionManager {
         signOutUser().then(() => {
             RouteManager.redirect("/home");
         });
-    }
-
-    static async reloadUser() {
-        return new Promise(async (resolve, reject) => {
-            const newUserManager = DBManager.getUserManager(this.getUserId());
-            await newUserManager.fetchData();
-            this.setCurrentUserManager(newUserManager);
-            resolve(newUserManager);
-        })
     }
 }

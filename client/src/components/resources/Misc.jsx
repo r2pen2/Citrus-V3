@@ -43,7 +43,7 @@ export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter
                     labelId="sort-select-label" 
                     onChange={(e) => setSortingScheme(e.target.value)} 
                     label="Sort By:"
-                    className="w-25"
+                    className="w-50"
                 >
                     <MenuItem value={UserRelation.sortingSchemes.BALANCE}>Balance</MenuItem>
                     <MenuItem value={UserRelation.sortingSchemes.ABSOLUTEVALUE}>Balance (Absolute Value)</MenuItem>
@@ -52,12 +52,10 @@ export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter
                     <MenuItem value={UserRelation.sortingSchemes.DISPLAYNAME}>Alphabetically</MenuItem>
                 </Select>
             </FormControl>
-            { setFilter && filter && // If setFilter and filter are not null             
-                <div className="d-flex flex-row gap-10 align-items-center">
-                    { renderFilterChip(filter.friends, "friends") }
-                    { renderFilterChip(filter.others, "others") }
-                </div>
-            }
+            <div className="d-flex flex-row gap-10 align-items-center justify-content-end w-50">
+                { setFilter && filter && renderFilterChip(filter.friends, "friends") }
+                { setFilter && filter && renderFilterChip(filter.others, "others") }
+            </div>
         </div>
         
     )

@@ -16,9 +16,9 @@ import { EmojiBalanceBar, RelationBalanceLabel } from "./Balances";
 
 export function PeopleList({relations, sortingScheme, filter}) {
 
-    function renderRelationCards(relevantRelations, doLoad) {
+    function renderRelationCards(relevantRelations) {
         if (!relations.fetched) {
-            return doLoad ? <section className="d-flex flex-row justify-content-center w-100 align-items-center"><CircularProgress/></section> : <div></div>
+            return <section className="d-flex flex-row justify-content-center w-100 align-items-center"><CircularProgress/></section>;
         }
         const sortedRelations = UserRelation.applySort(sortingScheme, relevantRelations);
         return sortedRelations.map((relation, index) => {
@@ -31,7 +31,7 @@ export function PeopleList({relations, sortingScheme, filter}) {
         function renderOthers() {
             return <section>
                     <SectionTitle title="Other Users" />
-                    { renderRelationCards(relations.others, true) }
+                    { renderRelationCards(relations.others) }
             </section>
         }
         
@@ -40,7 +40,7 @@ export function PeopleList({relations, sortingScheme, filter}) {
                 <SectionTitle title="Friends">
                     <Button variant="contained">Add Friends</Button>
                 </SectionTitle>
-                { renderRelationCards(relations.friends, true) }   
+                { renderRelationCards(relations.friends) }   
             </section>
         }
 
@@ -52,7 +52,7 @@ export function PeopleList({relations, sortingScheme, filter}) {
         )
     }
 
-    return renderPeopleList()
+    return renderPeopleList();
 }
 
 export function UserRelationCard({relation}) {
