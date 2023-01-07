@@ -2,22 +2,21 @@
 import "./style/groups.scss";
 
 // Library Imports
-import { FormControl, TextField, Typography, Button, IconButton, Tooltip, CircularProgress } from "@mui/material";
+import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 // Component Imports
 import {Breadcrumbs} from "./Navigation";
-import { AvatarStack } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
+import { BalanceLabel, EmojiBalanceBar } from "./Balances";
 
 // API Imports
 import { RouteManager } from "../../api/routeManager";
 import { showDollars } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
-import { SectionTitle } from "./Labels";
-import { UserRelation } from "../../api/db/objectManagers/userManager";
+import { AvatarStack } from "./Avatars";
 
 // Get user manager from LS
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -86,10 +85,43 @@ export function GroupNew() {
 
 export function GroupsList({groupManagers}) {
 
+  function renderGroups() {
+    return groupManagers.map((groupManager, index) => {
+      return <GroupCard key={index} group={groupManager}></GroupCard>
+    });
+  }
   
-
-  return <test>Test</test>;
+  return (
+    <div className="group-cards-wrapper">
+      { renderGroups() }
+    </div>
+  )
 }
+
+function GroupCard({group}) {
+  return (
+      <div className="user-relation-card w-100 mb-3">
+        <OutlinedCard disableMarginBottom={true}>
+            <CardActionArea onClick={() => window.location = "/dashboard/group?id=" + group.documentId}>
+                <CardContent>
+                      <div className="transaction-card-content d-flex flex-row align-items-center w-100">
+                          <div className="w-50">
+                            <AvatarStack ids={group.data.users} max={3}/>
+                          </div>
+                          <div className="w-100 d-flex flex-row overflow-hidden justify-content-center">
+                            <Typography variant="h1" >{group.data.name}</Typography>
+                          </div>
+                          <div className="w-10 d-flex flex-column gap-10 align-items-center mr-2">
+                            <BalanceLabel groupBalances={group.data.balances} size="small"/>
+                            <EmojiBalanceBar groupBalances={group.data.balances} size="small" />
+                          </div>
+                       </div>
+                </CardContent>
+            </CardActionArea>
+        </OutlinedCard>
+      </div>
+  )
+} 
 
 export function GroupMembers({ user }) {
     const params = new URLSearchParams(window.location.search);
@@ -282,41 +314,4 @@ export function GroupAdd() {
         </div>
       </div>
     );
-}
-
-export function GroupPreviewCard({name, users, userDebt}) { 
-  
-  function getOweString() {
-    if (userDebt > 0) {
-      return `+${showDollars(Math.abs(userDebt))}`;
-    } else if (userDebt < 0) {
-      return `-${showDollars(Math.abs(userDebt))}`;
-    } else {
-      return "±$0"
-    }
-  }
-
-  function getDebtTooltip() {
-    if (userDebt > 0) {
-      return `You are owed ${showDollars(Math.abs(userDebt))}`;
-    } else if (userDebt < 0) {
-      return `You owe ${showDollars(Math.abs(userDebt))}`;
-    } else {
-      return "You're settled!"
-    }
-  }
-
-  return (
-    <OutlinedCard>
-      <div className="d-flex align-items-center flex-column w-100">
-      <Tooltip title={getDebtTooltip()} placement="top">
-        <div className="d-flex flex-column w-100 group-preview-card align-items-center gap-10">
-          <Typography variant="h1">{name}</Typography>
-          <Typography variant="subtitle1">{getOweString()}</Typography>
-        </div>
-      </Tooltip>
-      <AvatarStack ids={users} />
-      </div>
-    </OutlinedCard>
-  )
 }

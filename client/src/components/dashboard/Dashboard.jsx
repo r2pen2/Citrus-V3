@@ -12,7 +12,6 @@ import People from "./tabs/People";
 import NewTransaction from "./tabs/NewTransaction";
 import Shortcut from "./tabs/Shortcut";
 import UserGroups from "./tabs/UserGroups";
-import AllTransactions from "./tabs/AllTransactions";
 import Transaction from "./routes/Transaction";
 import Group from "./routes/Group";
 import User from "./routes/User";
@@ -41,8 +40,6 @@ export default function Dashboard() {
         return <NewTransaction />;
       case "groups":
         return <UserGroups />;
-      case "transactions":
-        return <AllTransactions />;
       default:
         return <People />;
     }

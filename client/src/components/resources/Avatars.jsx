@@ -12,12 +12,22 @@ import { OutlinedCard } from "./Surfaces";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 
-export function AvatarStack({ids, checked}) {
+export function AvatarStack({ids, max}) {
     function renderAvatarStackItems() {
+        if (max) {
+            console.log("spaciong")
+            return (
+                <AvatarGroup max={max}>
+                    { ids.map((id, key) => {
+                        return <AvatarStackItem userId={id} key={key}/>
+                    })}
+                </AvatarGroup>
+            )
+        }
         return (
             <AvatarGroup>
                 { ids.map((id, key) => {
-                    return <AvatarStackItem userId={id} key={key} checked={checked ? checked : []}/>
+                    return <AvatarStackItem userId={id} key={key}/>
                 })}
             </AvatarGroup>
         )
@@ -50,31 +60,9 @@ export function AvatarStackItem(props) {
         fetchUserData();
     }, [props.userId]);
 
-    function renderBadgedAvatar() {
-        
-        for (const payer of props.checked) {
-            if (payer === props.userId) {
-                return (
-                    <Badge badgeContent={<div className="avatar-check">✓</div>} color="primary" anchorOrigin={{vertical: "bottom", horizontal: "right"}}>
-                        <Avatar 
-                        src={pfpUrl ? pfpUrl : ""} 
-                        alt={name ? name : ""} 
-                        className="pfp"
-                        imgProps={{referrerPolicy: "no-referrer" }}/>
-                    </Badge>   
-                )
-            }
-        }
-        return <Avatar 
-        src={pfpUrl ? pfpUrl : ""} 
-        alt={name ? name : ""} 
-        className="pfp"
-        imgProps={{referrerPolicy: "no-referrer" }}/>
-    }
-
     return (
         <Tooltip title={name ? name : ""}>
-            { renderBadgedAvatar() }
+            <Avatar src={pfpUrl ? pfpUrl : ""} alt={name ? name : ""} className="pfp" imgProps={{referrerPolicy: "no-referrer" }}/>
         </Tooltip>
     )
 }

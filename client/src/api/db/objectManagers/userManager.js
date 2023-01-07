@@ -292,6 +292,7 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelationWithUser(userId) {
+        await this.fetchData();
         return new Promise(async (resolve, reject) => {
             const allRelations = await this.getRelations();
             let found = false;

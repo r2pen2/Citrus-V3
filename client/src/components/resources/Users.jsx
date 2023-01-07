@@ -10,7 +10,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
-import { EmojiBalanceBar, HistoryBalanceLabel, RelationBalanceLabel } from "./Balances";
+import { EmojiBalanceBar, HistoryBalanceLabel, BalanceLabel } from "./Balances";
 
 // API imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -83,8 +83,8 @@ export function UserDetail() {
       <section className="d-flex flex-column align-items-center m-5 gap-10">
         <AvatarIcon id={userId} size="150px"/>
         <h1>{userRelation.displayName}</h1>
-        <RelationBalanceLabel relation={userRelation} size="large" />
-        <EmojiBalanceBar relation={userRelation} size="large"/>
+        <BalanceLabel userRelation={userRelation} size="large" />
+        <EmojiBalanceBar userRelation={userRelation} size="large"/>
       </section>
       <section className="d-flex flex-row justify-content-between w-50 gap-10">
         <Button className="w-100" variant="contained">Settle</Button>

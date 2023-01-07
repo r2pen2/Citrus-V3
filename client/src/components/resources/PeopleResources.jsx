@@ -2,8 +2,7 @@
 import "./style/people.scss";
 
 // Library Imports
-import { useState, useEffect } from "react";
-import { Button, CardActionArea, CardContent, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, ToggleButton } from "@mui/material";
+import { Typography, CircularProgress, Button, CardActionArea, CardContent } from "@mui/material";
 
 // API Imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -12,7 +11,7 @@ import { UserRelation } from "../../api/db/objectManagers/userManager";
 import { SectionTitle } from "./Labels";
 import { AvatarIcon } from "./Avatars";
 import { OutlinedCard } from "./Surfaces";
-import { EmojiBalanceBar, RelationBalanceLabel } from "./Balances";
+import { EmojiBalanceBar, BalanceLabel } from "./Balances";
 
 export function PeopleList({relations, sortingScheme, filter}) {
 
@@ -59,9 +58,9 @@ export function UserRelationCard({relation}) {
 
     return (
         <div className="user-relation-card w-100 mb-3">
-          <OutlinedCard disableMarginBottom={true}>
-              <CardActionArea onClick={() => window.location = "/dashboard/user?id=" + relation.userId}>
-                  <CardContent>
+            <OutlinedCard disableMarginBottom={true}>
+                <CardActionArea onClick={() => window.location = "/dashboard/user?id=" + relation.userId}>
+                    <CardContent>
                         <div className="transaction-card-content d-flex flex-row align-items-center w-100">
                             <div className="w-10">
                                 <AvatarIcon id={relation.userId} size={60}/>
@@ -69,14 +68,14 @@ export function UserRelationCard({relation}) {
                             <div className="w-100 d-flex flex-row overflow-hidden justify-content-start">
                                 <Typography variant="h1" marginLeft={"20px"}>{relation.displayName}</Typography>
                             </div>
-                            <div className="w-10 d-flex flex-column gap-10 overflow-auto">
-                                <RelationBalanceLabel relation={relation} size="small" />
-                                <EmojiBalanceBar relation={relation} size="small" />
+                            <div className="w-10 d-flex flex-column gap-10 align-items-center mr-2">
+                                <BalanceLabel userRelation={relation} size="small" />
+                                <EmojiBalanceBar userRelation={relation} size="small" />
                             </div>
-                         </div>
-                  </CardContent>
-              </CardActionArea>
-          </OutlinedCard>
+                        </div>
+                    </CardContent>
+                </CardActionArea>
+            </OutlinedCard>
         </div>
     )
 } 

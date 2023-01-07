@@ -3,54 +3,105 @@ import Badge from '@mui/material/Badge';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { CurrencyManager } from "../../api/currencyManager"; 
+import { SessionManager } from "../../api/sessionManager";
 
-export function EmojiBalanceBar({relation, size}) {
+export function EmojiBalanceBar({userRelation, groupBalances, size}) {
 
-    function renderEmojis() {
+    if (userRelation) {
+        function renderEmojis() {
 
-        // First we sort balances
-        const sortedBalances = Object.keys(relation.balances).sort().reduce(
-            (obj, key) => {
-                obj[key] = relation.balances[key];
-                return obj;
-            },
-            {}
-        )
-        // This sorting is really fucked lmao it's not actually sorting by emoji name but instead sorting by the stringified unicode representation (I think)
-        // So ☕ is handled as U+2615 and 🍕 is U+1F355
-
-        return Object.entries(sortedBalances).map((key, idx) => {
-
-            const amt = Math.abs(key[1]);
-
-            function getTooltip() {
-                if (key[1] > 0) {
-                    return `You're owed ${amt} ${key[0]}`;
-                }
-                if (key[1] < 0) {
-                    return `You owe ${amt} ${key[0]}`;
-                }
-            }
-
-            if (key[0] !== "USD" && key[1] !== 0) {
-                return (
-                    <Tooltip key={idx} title={getTooltip()}>
-                        <Badge badgeContent={amt} color={key[1] > 0 ? "citrusGreen" : "citrusRed"}>
-                            <div className={"emoji-badge " + size}>
-                                {key[0]}
-                            </div>
-                        </Badge>
-                    </Tooltip>
-                )
-            }
-        })    
-    }
+            // First we sort balances
+            const sortedBalances = Object.keys(userRelation.balances).sort().reduce(
+                (obj, key) => {
+                    obj[key] = userRelation.balances[key];
+                    return obj;
+                },
+                {}
+            )
+            // This sorting is really fucked lmao it's not actually sorting by emoji name but instead sorting by the stringified unicode representation (I think)
+            // So ☕ is handled as U+2615 and 🍕 is U+1F355
     
-    return (
-        <div className="d-flex flex-row w-100 overflow-auto align-items-center gap-10 justify-content-center">
-            {renderEmojis()}
-        </div>
-    )
+            return Object.entries(sortedBalances).map((key, idx) => {
+    
+                const amt = Math.abs(key[1]);
+    
+                function getTooltip() {
+                    if (key[1] > 0) {
+                        return `You're owed ${amt} ${key[0]}`;
+                    }
+                    if (key[1] < 0) {
+                        return `You owe ${amt} ${key[0]}`;
+                    }
+                }
+    
+                if (key[0] !== "USD" && key[1] !== 0) {
+                    return (
+                        <Tooltip key={idx} title={getTooltip()}>
+                            <Badge badgeContent={amt} color={key[1] > 0 ? "citrusGreen" : "citrusRed"}>
+                                <div className={"emoji-badge " + size}>
+                                    {key[0]}
+                                </div>
+                            </Badge>
+                        </Tooltip>
+                    )
+                }
+            })    
+        }
+        
+        return (
+            <div className="d-flex flex-row w-100 overflow-auto align-items-center gap-10 justify-content-center">
+                {renderEmojis()}
+            </div>
+        )
+    }
+
+    if (groupBalances) {
+        function renderEmojis() {
+
+            // First we sort balances
+            const sortedBalances = Object.keys(groupBalances[SessionManager.getUserId()]).sort().reduce(
+                (obj, key) => {
+                    obj[key] = groupBalances[SessionManager.getUserId()][key];
+                    return obj;
+                },
+                {}
+            )
+            // This sorting is really fucked lmao it's not actually sorting by emoji name but instead sorting by the stringified unicode representation (I think)
+            // So ☕ is handled as U+2615 and 🍕 is U+1F355
+    
+            return Object.entries(sortedBalances).map((key, idx) => {
+    
+                const amt = Math.abs(key[1]);
+    
+                function getTooltip() {
+                    if (key[1] > 0) {
+                        return `You're owed ${amt} ${key[0]}`;
+                    }
+                    if (key[1] < 0) {
+                        return `You owe ${amt} ${key[0]}`;
+                    }
+                }
+    
+                if (key[0] !== "USD" && key[1] !== 0) {
+                    return (
+                        <Tooltip key={idx} title={getTooltip()}>
+                            <Badge badgeContent={amt} color={key[1] > 0 ? "citrusGreen" : "citrusRed"}>
+                                <div className={"emoji-badge " + size}>
+                                    {key[0]}
+                                </div>
+                            </Badge>
+                        </Tooltip>
+                    )
+                }
+            })    
+        }
+        
+        return (
+            <div className="d-flex flex-row w-100 overflow-auto align-items-center gap-10 justify-content-center">
+                {renderEmojis()}
+            </div>
+        )
+    }
 }
 
 export function HistoryBalanceLabel({history}) {
@@ -70,19 +121,37 @@ export function HistoryBalanceLabel({history}) {
     return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(amt) : history.currency.type + " x " + amt}</h2>;
 }
 
-export function RelationBalanceLabel({relation, size}) {
+export function BalanceLabel({userRelation, groupBalances, size}) {
 
-    const legalBal = relation.balances["USD"];
+    if (userRelation) {
+        const legalBal = userRelation.balances["USD"];
 
-    function getBalanceColor() {
-        if (legalBal > 0) {
-            return "primary";
+        function getBalanceColor() {
+            if (legalBal > 0) {
+                return "primary";
+            }
+            if (legalBal < 0) {
+                return "error";
+            }
+            return "";
         }
-        if (legalBal < 0) {
-            return "error";
-        }
-        return "";
+    
+        return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
     }
 
-    return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+    if (groupBalances) {
+        let legalBal = groupBalances[SessionManager.getUserId()]["USD"];
+
+        function getBalanceColor() {
+            if (legalBal > 0) {
+                return "primary";
+            }
+            if (legalBal < 0) {
+                return "error";
+            }
+            return "";
+        }
+    
+        return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+    }
 }
