@@ -28,7 +28,6 @@ export default function People() {
   
   useEffect(() => {
       async function fetchRelations() {
-          await currentUserManager.fetchData();
           const allRelations = await currentUserManager.getRelations();
           const friendsList = await currentUserManager.getFriends();
           const friends = [];

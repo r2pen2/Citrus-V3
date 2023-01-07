@@ -84,6 +84,13 @@ export function GroupNew() {
   );
 }
 
+export function GroupsList({groupManagers}) {
+
+  
+
+  return <test>Test</test>;
+}
+
 export function GroupMembers({ user }) {
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get("id");

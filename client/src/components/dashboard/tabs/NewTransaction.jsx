@@ -21,6 +21,8 @@ import { UserRelationHistory } from "../../../api/db/objectManagers/userManager"
 import { AvatarIcon } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
 
+const currentUserManager = SessionManager.getCurrentUserManager();
+
 /**
  * Wrapper component for new transaction
  * @param {Props} props Currently unused
@@ -70,7 +72,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     useEffect(() => {
         async function fetchUserData() {
-            const currentUserManager = SessionManager.getCurrentUserManager();
             let friendIds = await currentUserManager.getFriends();
             let groupIds = await currentUserManager.getGroups();
             let newFriends = [];

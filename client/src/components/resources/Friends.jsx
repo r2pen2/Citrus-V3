@@ -19,7 +19,6 @@ export function HomeFriendsList() {
 
     useEffect(() => {
         async function fetchFriendData() {
-            currentUserManager.fetchData();
             const friendIds = await currentUserManager.getFriends();
             let friendsList = [];
             for (const friendId of friendIds) {

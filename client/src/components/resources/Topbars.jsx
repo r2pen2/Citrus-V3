@@ -202,28 +202,6 @@ export function UserTopbar() {
                     Settings
                   </MenuItem>
                 </Menu>
-                <Tooltip title="Notifications">
-                  <IconButton
-                    size="medium"
-                    edge="start"
-                    color="inherit"
-                    aria-label="notifications-icon"
-                    href="#notifications"
-                  >
-                    <NotificationsIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Bookmarks">
-                  <IconButton
-                    size="medium"
-                    edge="start"
-                    color="inherit"
-                    aria-label="bookmarks-icon"
-                    href="/dashboard#bookmarks"
-                  >
-                    <BookmarksIcon />
-                  </IconButton>
-                </Tooltip>
                 <Tooltip title="Log-Out">
                   <IconButton
                     size="medium"

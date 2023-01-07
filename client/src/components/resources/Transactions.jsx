@@ -22,6 +22,8 @@ import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { CurrencyManager } from "../../api/currencyManager";
 
+const currentUserManager = SessionManager.getCurrentUserManager();
+
 export function TransactionList(props) {
 
   const bracketNames = ["Today", "Yesterday", "This Week", "This Month", "This Year", "Older"];
@@ -34,8 +36,6 @@ export function TransactionList(props) {
   useEffect(() => {
     async function fetchUserTransactions() {
       // Get all transaction IDs that user is in
-      const currentUserManager = SessionManager.getCurrentUserManager();
-      await currentUserManager.fetchData();
       let transactionIds = await currentUserManager.getTransactions();
       let newTransactionManagers = [];
       for (const transactionId of transactionIds) {
@@ -271,7 +271,6 @@ export function TransactionCard({transactionManager}) {
     async function handleSettleSend() {
       const amt = document.getElementById(settleInputId).value;
       // If the initialBalance is positive, this user owes money. The one sending the settlement should be the one who owes money.
-      const currentUserManager = SessionManager.getCurrentUserManager();
       const fromUser = context.initialBalance > 0 ? currentUserManager : DBManager.getUserManager(settleState.userSelected);
       const toUser = context.initialBalance > 0 ? settleState.userSelected : SessionManager.getUserId();
       await fromUser.settleWithUserInTransaction(toUser, transactionManager.getDocumentId(), parseInt(amt));

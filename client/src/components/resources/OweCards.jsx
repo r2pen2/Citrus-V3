@@ -31,7 +31,6 @@ export function DashboardOweCards() {
 
         async function fetchUserRelations() {
             // Get all transactions for current user
-            await currentUserManager.fetchData();
             const userRelations = await currentUserManager.getSortedRelations();
             setRelations({
                 positive: userRelations.positive,

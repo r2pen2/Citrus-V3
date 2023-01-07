@@ -18,6 +18,8 @@ import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { getDateString } from "../../api/strings";
 
+const currentUserManager = SessionManager.getCurrentUserManager();
+
 export function UserDetail() {
   const params = new URLSearchParams(window.location.search);
   const userId = params.get("id");
@@ -32,7 +34,6 @@ export function UserDetail() {
         RouteManager.redirect("/dashboard");
         return;
       }
-      const currentUserManager = SessionManager.getCurrentUserManager();
       const relation = await currentUserManager.getRelationWithUser(userId);
       setUserRelation(relation);
     }

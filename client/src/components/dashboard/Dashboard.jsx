@@ -12,9 +12,7 @@ import People from "./tabs/People";
 import NewTransaction from "./tabs/NewTransaction";
 import Shortcut from "./tabs/Shortcut";
 import UserGroups from "./tabs/UserGroups";
-import OweOneDirection from "./tabs/OweOneDirection";
 import AllTransactions from "./tabs/AllTransactions";
-import Bookmarks from "./tabs/Bookmarks";
 import Transaction from "./routes/Transaction";
 import Group from "./routes/Group";
 import User from "./routes/User";
@@ -26,20 +24,7 @@ export default function Dashboard() {
 
   RouteManager.setTitleOrRedirectToLogin("Dashboard");
 
-  const [shortcutActive, setShortcutActive] = useState(false);        // Whether or not new transaction shortcut is active
-  const [bookmarksDeployed, setBookmarksDeployed] = useState(false);  // Whether or not bookmarks are displayed in shortcut
   const [activeTab, setActiveTab] = useState(RouteManager.getHash() ? RouteManager.getHash() : "home");                 // Active tab for content selection
-
-  /**
-   * Close shortcut on mouseup
-   * @param {Event} event mouseEvent that triggered this function
-   */
-   function closeShortcut(event) {
-    if (event.type === "mouseup") {
-      setShortcutActive(false);
-      setBookmarksDeployed(false);
-    }
-  }
 
   // Enable back button!
   useEffect(() => {
@@ -48,45 +33,14 @@ export default function Dashboard() {
     };
   });
 
-  /**
-   * Render shortcut page when active
-   * @returns {Component} shortcut page
-   */
-  function renderShortcut() {
-    // Don't render shortcut on the new transaction page
-    const location = window.location.toString();
-    const lastSlash = location.lastIndexOf('/');
-    const afterSlash = location.substring(lastSlash + 1);
-    if (afterSlash === "new-transaction") { 
-      return; 
-    } else {
-      return (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: 2 }}
-          open={shortcutActive}
-          onClick={() => {setShortcutActive(false);}}
-          onMouseUp={(e) => closeShortcut(e)}
-        >
-          <Shortcut bookmarksDeployed={bookmarksDeployed} setBookmarksDeployed={setBookmarksDeployed}/>
-        </Backdrop>
-      ) 
-    }
-  }
-
   function renderTab() {
     switch(activeTab) {
       case "people":
         return <People />;
       case "new-transaction":
         return <NewTransaction />;
-      case "bookmarks":
-        return <Bookmarks />;
       case "groups":
         return <UserGroups />;
-      case "owe-positive":
-        return <OweOneDirection positive={true}/>;
-      case "owe-negative":
-        return <OweOneDirection positive={false}/>;
       case "transactions":
         return <AllTransactions />;
       default:
@@ -96,7 +50,6 @@ export default function Dashboard() {
   
   return (
     <div className="dashboard-container d-flex flex-column align-items-center" style={{paddingBottom: "100px"}}>
-      { renderShortcut() }
       <div className="dashboard-pane ">
         <Routes>
           <Route path="*" element={ renderTab() }/>
@@ -105,7 +58,7 @@ export default function Dashboard() {
           <Route path="/user/*" element={<User />}/>
         </Routes>
       </div>
-      <BottomNav setShortcutActive={setShortcutActive} setBookmarksDeployed={setBookmarksDeployed}/>
+      <BottomNav />
     </div>
   );
 }
