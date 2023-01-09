@@ -414,7 +414,6 @@ export class UserRelation {
         this.numTransactions++;
         this.lastInteracted = new Date();
         this.history.unshift(json);
-        console.log(this.history)
     }
 
     getHistory() {

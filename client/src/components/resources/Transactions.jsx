@@ -130,7 +130,7 @@ export function TransactionDetail() {
       let toId = null;
 
       for (const u of Object.keys(transactionData.balances)) {
-        if (transactionData.balances[u] > 0) {
+        if (transactionData.balances[u] < 0) {
           toId = u;
         } else {
           fromId = u;

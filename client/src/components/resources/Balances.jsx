@@ -109,7 +109,7 @@ export function EmojiBalanceBar({userRelation, groupBalances, size}) {
     }
 }
 
-export function BalanceLabel({userRelation, groupBalances, history, transaction, size}) {
+export function BalanceLabel({userRelation, groupBalances, history, transaction, groupId, size}) {
 
     function getColor(amt) {
         if (amt > 0) {
@@ -169,7 +169,12 @@ export function BalanceLabel({userRelation, groupBalances, history, transaction,
                 </Tooltip>
             )
         }
-        const amt = transaction.balances[SessionManager.getUserId()];
+        let amt = transaction.balances[SessionManager.getUserId()];
+        if (groupId) {
+            if (transaction.settleGroups[groupId]) {
+                amt = transaction.settleGroups[groupId];
+            }
+        }
         return (
             <Tooltip title={getTooltip(amt, transaction.currency.legal ? CurrencyManager.formatUSD(amt) : transaction.currency.type + " x " + Math.abs(amt))}>
                 <Typography variant="h2" color={getColor(amt)}>{transaction.currency.legal ? CurrencyManager.formatUSD(amt) : transaction.currency.type + " x " + amt}</Typography>

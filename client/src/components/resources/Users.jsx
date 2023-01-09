@@ -43,7 +43,7 @@ export function UserDetail() {
       const relation = await currentUserManager.getRelationWithUser(userId);
       setUserRelation(relation);
       const usd = relation.balances["USD"] ? relation.balances["USD"] : 0;
-      setSettleAmount(usd > 0 ? usd : 0);
+      setSettleAmount(usd < 0 ? Math.abs(usd) : 0);
     }
 
     // Fetch transaction data on load
@@ -100,7 +100,7 @@ export function UserDetail() {
   function updateCurrencyAmount(state) {
     const curr = state.legal ? state.legalType : state.emojiType;
     const amt = userRelation.balances[curr] ? userRelation.balances[curr] : 0
-    setSettleAmount(amt > 0 ? amt : 0);
+    setSettleAmount(amt < 0 ? Math.abs(amt) : 0);
   }
 
   function handleCurrencyTypeChange(e) {
@@ -132,10 +132,32 @@ export function UserDetail() {
 
   async function handleSettleSubmit() {
     const newTransactionTitle = `${SessionManager.getDisplayName()} settled with ${userRelation.displayName}`;
-    const settleGroup = null;
-    let settleUsers = [];
-    settleUsers.push(SessionManager.getUserId());
-    settleUsers.push(userId);
+
+    let settleGroups = {};
+
+    // Find out how much goes to each group
+    const curr = settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType;
+    const totalDebt = userRelation.balances[curr] ? (userRelation.balances[curr] < 0 ? userRelation.balances[curr] : 0) : 0; 
+    let amtLeft = settleAmount < Math.abs(totalDebt) ? settleAmount : Math.abs(totalDebt);
+    console.log(amtLeft);
+    for (const history of userRelation.getHistory()) {
+      console.log(history);
+      if (amtLeft > 0) {
+        const group = history.group;
+        if (Math.abs(history.amount) > amtLeft) {
+          // This will be the last history we look at
+          if (group) {
+            settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
+          }
+          amtLeft = 0;
+        } else {
+          if (group) {
+            settleGroups[group] = settleGroups[group] ? settleGroups[group] - history.amount : - history.amount; 
+          }
+          amtLeft += history.amount > 0 ? -1 * history.amount : history.amount;
+        }
+      }
+    }
 
     // First, we have to create the transaction on the database so that the new transactionID can be placed into userRelationHistories
     const transactionManager = DBManager.getTransactionManager();
@@ -144,26 +166,29 @@ export function UserDetail() {
     transactionManager.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
     transactionManager.setAmount(settleAmount);
     transactionManager.setTitle(newTransactionTitle);
-    transactionManager.setGroup(settleGroup);
-    transactionManager.updateBalance(SessionManager.getUserId(), -1 * settleAmount);
-    transactionManager.updateBalance(userId, settleAmount);
+    transactionManager.updateBalance(SessionManager.getUserId(), settleAmount);
+    transactionManager.updateBalance(userId, -1 * settleAmount);
+    
+    // Add settle Groups
+    for (const k of Object.keys(settleGroups)) {
+      transactionManager.updateSettleGroup(k, settleGroups[k]);
+    }
+
     await transactionManager.push();
 
     // Create a relationHistory for user 1
     const h1 = new UserRelationHistory();
-    h1.setAmount(-1 * settleAmount);
+    h1.setAmount(settleAmount);
     h1.setCurrencyLegal(settleCurrency.legal);
     h1.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
-    h1.setGroup(settleGroup);
     h1.setTransaction(transactionManager.documentId);
     h1.setTransactionTitle(newTransactionTitle);
     
     // Create a relationHistory for user2
     const h2 = new UserRelationHistory();
-    h2.setAmount(settleAmount);
+    h2.setAmount(-1 * settleAmount);
     h2.setCurrencyLegal(settleCurrency.legal);
     h2.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
-    h2.setGroup(settleGroup);
     h2.setTransaction(transactionManager.documentId);
     h2.setTransactionTitle(newTransactionTitle);
 
@@ -183,16 +208,19 @@ export function UserDetail() {
     const pushed2 = await user2Manager.push();
     success = (success && pushed1 && pushed2);
 
-    if (settleGroup) {
-        // If there's a group, add data to group
-        const groupManager = DBManager.getGroupManager(settleGroup);
+    for (const k of Object.keys(settleGroups)) {
+        // If there are groups to settle in, add data to groups
+        const groupManager = DBManager.getGroupManager(k);
         groupManager.addTransaction(transactionManager.documentId);
         const currencyKey = settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType;
-        for (const user of settleUsers) {
-            const userBal = await groupManager.getUserBalance(user);
-            userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
-            groupManager.updateBalance(user, userBal);
-        }
+        
+        const fromBal = await groupManager.getUserBalance(SessionManager.getUserId());
+        fromBal[currencyKey] = fromBal[currencyKey] ? fromBal[currencyKey] + settleGroups[k] : settleGroups[k];
+        const toBal = await groupManager.getUserBalance(userId);
+        toBal[currencyKey] = toBal[currencyKey] ? toBal[currencyKey] - settleGroups[k] : -1 * settleGroups[k];
+        groupManager.updateBalance(SessionManager.getUserId(), fromBal);
+        groupManager.updateBalance(userId, toBal);
+        
         const pushed = await groupManager.push();
         success = (success && pushed);
     }

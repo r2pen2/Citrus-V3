@@ -260,20 +260,34 @@ export function GroupDetail() {
       return (
         <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
           <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-            <div className="d-flex flex-column align-items-left">
+            <div className="d-flex flex-column align-items-left w-100">
               <div className="d-flex flex-row align-items-center gap-10">
                 <h2>
                   { transaction.data.title }
                 </h2>
-                <AvatarStack size={40} ids={getIds()} max={3} />
               </div>
               <p>{getDateString(transaction.data.date)}</p>
             </div>
-            <BalanceLabel transaction={transaction.data} />
+            <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+              <BalanceLabel groupId={groupId} transaction={transaction.data} />
+              <AvatarStack size={40} ids={getIds()} max={8} />
+            </section>
           </div>
         </OutlinedCard>
       )
     })
+  }
+
+  function renderButtons() {
+    const showButtons = false;
+    if (showButtons) {
+      return (      
+        <section className="d-flex flex-row justify-content-between w-50 gap-10">
+          <Button className="w-100" variant="contained">Settle</Button>
+          <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
+        </section>
+      )
+    }
   }
 
   return (
@@ -284,10 +298,7 @@ export function GroupDetail() {
         <BalanceLabel groupBalances={groupData.balances} size="large" />
         <EmojiBalanceBar groupBalances={groupData.balances} size="large"/>
       </section>
-      <section className="d-flex flex-row justify-content-between w-50 gap-10">
-        <Button className="w-100" variant="contained">Settle</Button>
-        <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
-      </section>
+      { renderButtons() }
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
         { renderHistory() }
       </section>

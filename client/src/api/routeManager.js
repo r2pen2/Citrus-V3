@@ -107,7 +107,9 @@ export class RouteManager {
      * @param {string} userId id of user to view history of
      */
     static redirectToUser(userId) {
-        RouteManager.redirect(`/dashboard/user?id=${userId}`);
+        if (userId) {
+            RouteManager.redirect(`/dashboard/user?id=${userId}`);
+        }
     }
 
     /**

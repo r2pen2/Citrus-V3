@@ -20,6 +20,7 @@ export class TransactionManager extends ObjectManager {
         TITLE: "title",
         BALANCES: "balances",
         GROUP: "group",
+        SETTLEGROUPS: "settleGroups",
     }
 
     getEmptyData() {
@@ -31,6 +32,7 @@ export class TransactionManager extends ObjectManager {
             balances: {},           // {map<string, number>} Map relating usedIds to how much they are owed/owe for this transaction
             createdBy: null,        // {string} ID of user that created this transaction
             group: null,            // {number} ID of this transaction's group (if applicable)
+            settleGroups: {},     // {map<string, number} Map relating groupIds to how much they relate to this settlement (if applicable)
         }
         return empty;
     }
@@ -45,6 +47,7 @@ export class TransactionManager extends ObjectManager {
             case this.fields.TITLE:
             case this.fields.BALANCES:
             case this.fields.GROUP:
+            case this.fields.SETTLEGROUPS:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -63,6 +66,7 @@ export class TransactionManager extends ObjectManager {
             case this.fields.TITLE:
             case this.fields.BALANCES:
             case this.fields.GROUP:
+                case this.fields.SETTLEGROUPS:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -95,6 +99,7 @@ export class TransactionManager extends ObjectManager {
                 data.group = change.value;
                 return data;
             case this.fields.BALANCES:
+            case this.fields.SETTLEGROUPS:
                 super.logInvalidChangeType(change);
                 return data;
             default:
@@ -133,6 +138,9 @@ export class TransactionManager extends ObjectManager {
                 case this.fields.BALANCES:
                     resolve(this.data.balances);
                     break;
+                case this.fields.SETTLEGROUPS:
+                    resolve(this.data.settleGroups);
+                    break;
                 default:
                     super.logInvalidGetField(field);
                     resolve(null);
@@ -146,6 +154,9 @@ export class TransactionManager extends ObjectManager {
         switch(change.field) {
             case this.fields.BALANCES:
                 data.balances[change.key] = change.value;
+                return data;
+            case this.fields.SETTLEGROUPS:
+                data.settleGroups[change.key] = change.value;
                 return data;
             case this.fields.CURRENCYLEGAL:
             case this.fields.CURRENCYTYPE:
@@ -227,6 +238,14 @@ export class TransactionManager extends ObjectManager {
             })
         })
     }
+
+    async getSettleGroups() {
+        return new Promise(async (resolve, reject) => {
+            this.handleGet(this.fields.SETTLEGROUPS).then((val) => {
+                resolve(val);
+            })
+        })
+    }
     
     // ================= Set Operations ================= //
 
@@ -272,6 +291,11 @@ export class TransactionManager extends ObjectManager {
     updateBalance(key, relation) {
         const balanceUpdate = new Update(this.fields.BALANCES, key, relation);
         super.addChange(balanceUpdate);
+    }
+
+    updateSettleGroup(key, amount) {
+        const settleGroupUpdate = new Update(this.fields.SETTLEGROUPS, key, amount);
+        super.addChange(settleGroupUpdate);
     }
     
     // ================= Sub-Object Functions ================= //

@@ -4,7 +4,6 @@ import "./style/avatars.scss";
 // Library imports
 import { useState, useEffect } from 'react';
 import { AvatarGroup, Avatar, Tooltip, Typography } from "@mui/material";
-import Badge from '@mui/material/Badge';
 
 // API imports
 import { DBManager } from "../../api/db/dbManager";
@@ -29,7 +28,7 @@ export function AvatarStack({ids, max, size}) {
             )
         }
         return (
-            <AvatarGroup>
+            <AvatarGroup >
                 { sortedIds.map((id, key) => {
                     return <AvatarStackItem size={size} userId={id} key={key}/>
                 })}
@@ -64,17 +63,22 @@ export function AvatarStackItem(props) {
         fetchUserData();
     }, [props.userId]);
 
+    const imgStyle = {
+        border: "2px solid lightgray",
+        borderRadius: "50%"
+    }
+
     if (props.size) {
         return (
-            <Tooltip title={name ? name : ""}>
-                <Avatar src={pfpUrl ? pfpUrl : ""} sx={{width: props.size, height: props.size}} alt={name ? name : ""} imgProps={{referrerPolicy: "no-referrer" }}/>
+            <Tooltip title={name ? name : ""} onClick={() => RouteManager.redirectToUser(props.userId)} className="ml-1 mr-1">
+                <Avatar src={pfpUrl ? pfpUrl : ""} sx={{width: props.size, height: props.size}} alt={name ? name : ""} imgProps={{referrerPolicy: "no-referrer", style: imgStyle}}/>
             </Tooltip>
         )
     }
     
     return (
-        <Tooltip title={name ? name : ""}>
-            <Avatar src={pfpUrl ? pfpUrl : ""} alt={name ? name : ""} className="pfp" imgProps={{referrerPolicy: "no-referrer" }}/>
+        <Tooltip title={name ? name : ""} onClick={() => RouteManager.redirectToUser(props.userId)} className="ml-1 mr-1">
+            <Avatar src={pfpUrl ? pfpUrl : ""} alt={name ? name : ""} imgProps={{referrerPolicy: "no-referrer", style: imgStyle}}/>
         </Tooltip>
     )
 }
@@ -105,13 +109,13 @@ export function AvatarIcon(props) {
     // If we've declared a size, return one with sx attr
     if (props.size) {    
         return (
-            <Tooltip className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
+            <Tooltip onClick={() => RouteManager.redirectToUser(props.id)} className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
                 <Avatar src={pfpUrl} alt={displayName} sx={{width: props.size, height: props.size}} />
             </Tooltip>
         )
     }
     return (
-        <Tooltip className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
+        <Tooltip onClick={() => RouteManager.redirectToUser(props.id)} className="avatar-icon" title={props.showTooltip ? props.displayName : ""}>
             <Avatar src={pfpUrl} alt={displayName}/>
         </Tooltip>
     )
