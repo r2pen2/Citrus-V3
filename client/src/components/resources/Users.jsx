@@ -42,7 +42,8 @@ export function UserDetail() {
       }
       const relation = await currentUserManager.getRelationWithUser(userId);
       setUserRelation(relation);
-      setSettleAmount(relation.balances["USD"] ? relation.balances["USD"] : 0);
+      const usd = relation.balances["USD"] ? relation.balances["USD"] : 0;
+      setSettleAmount(usd > 0 ? usd : 0);
     }
 
     // Fetch transaction data on load
@@ -98,7 +99,8 @@ export function UserDetail() {
 
   function updateCurrencyAmount(state) {
     const curr = state.legal ? state.legalType : state.emojiType;
-    setSettleAmount(userRelation.balances[curr] ? userRelation.balances[curr] : 0);
+    const amt = userRelation.balances[curr] ? userRelation.balances[curr] : 0
+    setSettleAmount(amt > 0 ? amt : 0);
   }
 
   function handleCurrencyTypeChange(e) {
