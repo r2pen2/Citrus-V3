@@ -2,21 +2,24 @@
 import "./style/users.scss";
 
 // Library imports
-import { Button, Tooltip } from '@mui/material';
-import { useState, useEffect} from 'react';
+import { Button, Tooltip, Dialog, TextField, Select, MenuItem } from '@mui/material';
+import { useState, useEffect } from 'react';
 import { OutlinedCard } from "./Surfaces";
 import GroupsIcon from '@mui/icons-material/Groups';
 import HandshakeIcon from '@mui/icons-material/Handshake';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
 import { EmojiBalanceBar, BalanceLabel } from "./Balances";
 
 // API imports
-import { UserRelation } from "../../api/db/objectManagers/userManager";
+import { UserRelation, UserRelationHistory } from "../../api/db/objectManagers/userManager";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { getDateString } from "../../api/strings";
+import { CurrencyManager } from "../../api/currencyManager";
+import { DBManager } from "../../api/db/dbManager";
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -25,6 +28,9 @@ export function UserDetail() {
   const userId = params.get("id");
 
   const [userRelation, setUserRelation] = useState(new UserRelation());
+  const [settleOpen, setSettleOpen] = useState(false);
+  const [settleCurrency, setSettleCurrency] = useState({legal: true, legalType: CurrencyManager.legalCurrencies.USD, emojiType: CurrencyManager.emojiCurrencies.BEER});
+  const [settleAmount, setSettleAmount] = useState(0);
 
   useEffect(() => {
 
@@ -36,6 +42,7 @@ export function UserDetail() {
       }
       const relation = await currentUserManager.getRelationWithUser(userId);
       setUserRelation(relation);
+      setSettleAmount(relation.balances["USD"] ? relation.balances["USD"] : 0);
     }
 
     // Fetch transaction data on load
@@ -76,6 +83,124 @@ export function UserDetail() {
     })
   }
 
+  function handleLegalButtonPress() {
+    const newState = {legal: !settleCurrency.legal, legalType: settleCurrency.legalType, emojiType: settleCurrency.emojiType};
+    setSettleCurrency(newState);
+    updateCurrencyAmount(newState);
+  }
+
+  function populateCurrencyTypeSelect() {
+    const menu = settleCurrency.legal ? CurrencyManager.legalCurrencies : CurrencyManager.emojiCurrencies;
+    return Object.entries(menu).map((entry) => {
+        return <MenuItem key={entry[0]} value={entry[1]}>{entry[1]}</MenuItem>
+    })
+  }
+
+  function updateCurrencyAmount(state) {
+    const curr = state.legal ? state.legalType : state.emojiType;
+    setSettleAmount(userRelation.balances[curr] ? userRelation.balances[curr] : 0);
+  }
+
+  function handleCurrencyTypeChange(e) {
+    let newState = {
+      legal: null,
+      legalType: null,
+      emojiType: null
+    }
+    if (settleCurrency.legal) {
+      newState.legal = e.target.value;
+      newState.legalType = e.target.value;
+      newState.emojiType = settleCurrency.emojiType;
+    } else {
+      newState.legal = settleCurrency.legal;
+      newState.legalType = settleCurrency.legalType;
+      newState.emojiType = e.target.value;
+    }
+    setSettleCurrency(newState);
+    updateCurrencyAmount(newState);
+  }
+
+  function updateSettleAmount(e) {
+    const newAmt = parseFloat(e.target.value);
+    if (newAmt < 0) {
+        return;
+    }
+    setSettleAmount(newAmt);
+  }
+
+  async function handleSettleSubmit() {
+    const newTransactionTitle = `${SessionManager.getDisplayName()} settled with ${userRelation.displayName}`;
+    const settleGroup = null;
+    let settleUsers = [];
+    settleUsers.push(SessionManager.getUserId());
+    settleUsers.push(userId);
+
+    // First, we have to create the transaction on the database so that the new transactionID can be placed into userRelationHistories
+    const transactionManager = DBManager.getTransactionManager();
+    transactionManager.setCreatedBy(SessionManager.getUserId());
+    transactionManager.setCurrencyLegal(settleCurrency.legal);
+    transactionManager.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
+    transactionManager.setAmount(settleAmount);
+    transactionManager.setTitle(newTransactionTitle);
+    transactionManager.setGroup(settleGroup);
+    transactionManager.updateBalance(SessionManager.getUserId(), -1 * settleAmount);
+    transactionManager.updateBalance(userId, settleAmount);
+    await transactionManager.push();
+
+    // Create a relationHistory for user 1
+    const h1 = new UserRelationHistory();
+    h1.setAmount(-1 * settleAmount);
+    h1.setCurrencyLegal(settleCurrency.legal);
+    h1.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
+    h1.setGroup(settleGroup);
+    h1.setTransaction(transactionManager.documentId);
+    h1.setTransactionTitle(newTransactionTitle);
+    
+    // Create a relationHistory for user2
+    const h2 = new UserRelationHistory();
+    h2.setAmount(settleAmount);
+    h2.setCurrencyLegal(settleCurrency.legal);
+    h2.setCurrencyType(settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType);
+    h2.setGroup(settleGroup);
+    h2.setTransaction(transactionManager.documentId);
+    h2.setTransactionTitle(newTransactionTitle);
+
+    // Add this relation to both users
+    const user1Manager = DBManager.getUserManager(SessionManager.getUserId());
+    const user2Manager = DBManager.getUserManager(userId);
+    let user1Relation = await user1Manager.getRelationWithUser(userId);
+    let user2Relation = await user2Manager.getRelationWithUser(SessionManager.getUserId());
+    user1Relation.addHistory(h1);
+    user2Relation.addHistory(h2);
+    user1Manager.updateRelation(userId, user1Relation);
+    user2Manager.updateRelation(SessionManager.getUserId(), user2Relation);
+    
+    // Push users
+    let success = true;
+    const pushed1 = await user1Manager.push();
+    const pushed2 = await user2Manager.push();
+    success = (success && pushed1 && pushed2);
+
+    if (settleGroup) {
+        // If there's a group, add data to group
+        const groupManager = DBManager.getGroupManager(settleGroup);
+        groupManager.addTransaction(transactionManager.documentId);
+        const currencyKey = settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType;
+        for (const user of settleUsers) {
+            const userBal = await groupManager.getUserBalance(user);
+            userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
+            groupManager.updateBalance(user, userBal);
+        }
+        const pushed = await groupManager.push();
+        success = (success && pushed);
+    }
+
+    if (success) {
+        RouteManager.redirectToTransaction(transactionManager.documentId);
+    }
+    
+}
+
   return (
     <div className="d-flex flex-column align-items-center">
       <section className="d-flex flex-column align-items-center m-5 gap-10">
@@ -85,12 +210,31 @@ export function UserDetail() {
         <EmojiBalanceBar userRelation={userRelation} size="large"/>
       </section>
       <section className="d-flex flex-row justify-content-between w-50 gap-10">
-        <Button className="w-100" variant="contained">Settle</Button>
+        <Button className="w-100" variant="contained" onClick={() => setSettleOpen(true)}>Settle</Button>
         <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
       </section>
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
-        {renderHistory()}
+        { renderHistory() }
       </section>
+
+      <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={settleOpen} keepMounted onClose={() => setSettleOpen(false)} aria-describedby="alert-dialog-slide-description">
+        <div className="px-3 py-3 gap-10">
+            <section className="d-flex flex-column align-items-center justify-content-center m-2">
+                <h1>Settle with {userRelation.displayName}</h1>
+            </section>
+            <section className="d-flex flex-row align-items-center justify-content-center mt-5 gap-10">
+              <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => handleLegalButtonPress()}>{settleCurrency.legal ? "$" : "😉"}</Button>
+              <TextField autoFocus id="amount-input" type="number" label="Amount" value={settleAmount} onChange={updateSettleAmount} variant="standard"/>
+              <Select className="w-25" id="currency-type-input" value={settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
+                { populateCurrencyTypeSelect() }
+              </Select>
+            </section>
+            <section className="mt-5 mb-2 d-flex flex-column align-items-center justify-content-center">
+                <Button variant="contained" disabled={settleAmount === 0} onClick={handleSettleSubmit}>Submit</Button>
+            </section>
+        </div>
+        </Dialog>
+
     </div>
   );
 }
