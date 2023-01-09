@@ -73,6 +73,24 @@ export function sortByDate(array) {
 }
 
 /**
+ * Sorts a list alphabetically
+ * @param {[Object]} array list to be sorted
+ * @returns {[Object]} sorted list
+ */
+ export function sortAlphabetical(array) {
+    array.sort((a, b) => {
+        if (a < b) {
+            return -1;
+        }
+        if (a > b) {
+            return 1;
+        }
+        return 0;
+    });
+    return array;
+}
+
+/**
  * Places the current user first in a list (by UID)
  * @param {[Object]} array list to be sorted
  * @returns {[Object]} sorted list with current user at top 

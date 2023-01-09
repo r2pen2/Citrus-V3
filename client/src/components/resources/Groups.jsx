@@ -5,6 +5,7 @@ import "./style/groups.scss";
 import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import GroupsIcon from '@mui/icons-material/Groups';
 
 // Component Imports
 import {Breadcrumbs} from "./Navigation";
@@ -13,7 +14,7 @@ import { BalanceLabel, EmojiBalanceBar } from "./Balances";
 
 // API Imports
 import { RouteManager } from "../../api/routeManager";
-import { showDollars } from "../../api/strings";
+import { getDateString } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
 import { AvatarStack } from "./Avatars";
@@ -123,28 +124,6 @@ function GroupCard({group}) {
   )
 } 
 
-export function GroupMembers({ user }) {
-    const params = new URLSearchParams(window.location.search);
-    const groupId = params.get("id");
-  
-    return (
-      <div>
-        <Breadcrumbs path={"Dashboard/Groups/" + groupId + "/Members"} />
-        <h1>Group Members Page</h1>
-        <div>Group: {groupId}</div>
-        <h2>Needs implementation</h2>
-        <a href="https://github.com/r2pen2/Citrus-React/issues/99">
-          Github: Implement Dashboard/Groups/Group/Members?id=groupId #99
-        </a>
-        <ul>
-          <li>
-            <div>Renders a list of group members by groupId from urlparams</div>
-          </li>
-        </ul>
-      </div>
-    );
-}
-
 export function GroupInvite() {
 
     const params = new URLSearchParams(window.location.search);
@@ -231,38 +210,89 @@ export function GroupInvite() {
     );
 }
 
-export function GroupDashboard() {
-    const params = new URLSearchParams(window.location.search);
-    const groupId = params.get("id");
+export function GroupDetail() {
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get("id");
+
+  const [groupData, setGroupData] = useState({
+    users: [],
+    name: "",
+    balances: {}
+  });
   
-    return (
-      <div>
-        <Breadcrumbs path={"Dashboard/Groups/" + groupId} />
-        <h1>Group Dashboard Page</h1>
-        <div>Id: {groupId}</div>
-        <h2>Needs implementation</h2>
-        <a href="https://github.com/r2pen2/Citrus-React/issues/93">
-          Github: Implement Dashboard/Groups/Group?id=groupId #93
-        </a>
-        <ul>
-          <li>
-            <div>
-              Renders a dashboard element with context from groupId in urlparams
+  const [groupTransactions, setGroupTransactions] = useState([]);
+
+  useEffect(() => {
+    
+    async function fetchGroupData() {
+      const groupManager = DBManager.getGroupManager(groupId);
+      await groupManager.fetchData();
+      setGroupData(groupManager.data);
+      let newTransactionManagers = [];
+      for (const transactionId of groupManager.data.transactions) {
+        const transactionManager = DBManager.getTransactionManager(transactionId);
+        await transactionManager.fetchData();
+        newTransactionManagers.push(transactionManager);
+      }
+      setGroupTransactions(newTransactionManagers);
+    }
+
+    fetchGroupData();
+  }, [groupId]);
+
+  function renderHistory() {
+    return groupTransactions.map((transaction, index) => {
+
+      function handleClick(e) {
+        RouteManager.redirectToTransaction(transaction.documentId);
+      }
+      
+      function getIds() {
+        let ids = [];
+        for (const u of Object.keys(transaction.data.balances)) {
+          if (transaction.data.balances[u] !== 0) {
+            ids.push(u);
+          }
+        }
+        return ids;
+      }
+
+      return (
+        <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+          <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+            <div className="d-flex flex-column align-items-left">
+              <div className="d-flex flex-row align-items-center gap-10">
+                <h2>
+                  { transaction.data.title }
+                </h2>
+                <AvatarStack size={40} ids={getIds()} max={3} />
+              </div>
+              <p>{getDateString(transaction.data.date)}</p>
             </div>
-          </li>
-          <li>
-            <a href={"/dashboard/groups/group/invite?id=" + groupId}>
-              Invite Someone
-            </a>
-          </li>
-          <li>
-            <a href={"/dashboard/groups/group/members?id=" + groupId}>
-              View Group Members
-            </a>
-          </li>
-        </ul>
-      </div>
-    );
+            <BalanceLabel transaction={transaction.data} />
+          </div>
+        </OutlinedCard>
+      )
+    })
+  }
+
+  return (
+    <div className="d-flex flex-column align-items-center">
+      <section className="d-flex flex-column align-items-center m-5 gap-10">
+        <AvatarStack ids={groupData.users} size={100}/>
+        <h1>{groupData.name}</h1>
+        <BalanceLabel groupBalances={groupData.balances} size="large" />
+        <EmojiBalanceBar groupBalances={groupData.balances} size="large"/>
+      </section>
+      <section className="d-flex flex-row justify-content-between w-50 gap-10">
+        <Button className="w-100" variant="contained">Settle</Button>
+        <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
+      </section>
+      <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
+        { renderHistory() }
+      </section>
+    </div>
+  );
 }
 
 export function GroupAdd() {

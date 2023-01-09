@@ -10,7 +10,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
-import { EmojiBalanceBar, HistoryBalanceLabel, BalanceLabel } from "./Balances";
+import { EmojiBalanceBar, BalanceLabel } from "./Balances";
 
 // API imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -59,7 +59,7 @@ export function UserDetail() {
       
       return (
         <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-          <div className="w-100 m-3 d-flex flex-row align-items-center justify-content-between history-card">
+          <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
             <div className="d-flex flex-column align-items-left">
               <div className="d-flex flex-row align-items-center gap-10">
                 { renderIcon() }
@@ -69,9 +69,7 @@ export function UserDetail() {
               </div>
               <p>{getDateString(history.date)}</p>
             </div>
-            <div className="w-20 d-flex flex-column">
-              <HistoryBalanceLabel history={history} />
-            </div>
+            <BalanceLabel history={history} />
           </div>
         </OutlinedCard>
       )

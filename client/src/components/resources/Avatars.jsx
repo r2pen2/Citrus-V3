@@ -11,23 +11,27 @@ import { DBManager } from "../../api/db/dbManager";
 import { OutlinedCard } from "./Surfaces";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
+import { sortAlphabetical } from "../../api/sorting";
 
-export function AvatarStack({ids, max}) {
+export function AvatarStack({ids, max, size}) {
+
+    // First let's sort the IDS
+    const sortedIds = sortAlphabetical(ids);
+
     function renderAvatarStackItems() {
         if (max) {
-            console.log("spaciong")
             return (
                 <AvatarGroup max={max}>
-                    { ids.map((id, key) => {
-                        return <AvatarStackItem userId={id} key={key}/>
+                    { sortedIds.map((id, key) => {
+                        return <AvatarStackItem size={size} userId={id} key={key}/>
                     })}
                 </AvatarGroup>
             )
         }
         return (
             <AvatarGroup>
-                { ids.map((id, key) => {
-                    return <AvatarStackItem userId={id} key={key}/>
+                { sortedIds.map((id, key) => {
+                    return <AvatarStackItem size={size} userId={id} key={key}/>
                 })}
             </AvatarGroup>
         )
@@ -60,6 +64,14 @@ export function AvatarStackItem(props) {
         fetchUserData();
     }, [props.userId]);
 
+    if (props.size) {
+        return (
+            <Tooltip title={name ? name : ""}>
+                <Avatar src={pfpUrl ? pfpUrl : ""} sx={{width: props.size, height: props.size}} alt={name ? name : ""} imgProps={{referrerPolicy: "no-referrer" }}/>
+            </Tooltip>
+        )
+    }
+    
     return (
         <Tooltip title={name ? name : ""}>
             <Avatar src={pfpUrl ? pfpUrl : ""} alt={name ? name : ""} className="pfp" imgProps={{referrerPolicy: "no-referrer" }}/>

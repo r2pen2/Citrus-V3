@@ -56,6 +56,11 @@ export function EmojiBalanceBar({userRelation, groupBalances, size}) {
     }
 
     if (groupBalances) {
+
+        if (!groupBalances[SessionManager.getUserId()]) {
+            return <div></div>
+        }
+
         function renderEmojis() {
 
             // First we sort balances
@@ -104,54 +109,71 @@ export function EmojiBalanceBar({userRelation, groupBalances, size}) {
     }
 }
 
-export function HistoryBalanceLabel({history}) {
+export function BalanceLabel({userRelation, groupBalances, history, transaction, size}) {
 
-    const amt = history.getAmount();
-  
-    function getHistoryColor() {
+    function getColor(amt) {
         if (amt > 0) {
-          return "color-primary";
+            return "primary";
         }
         if (amt < 0) {
-          return "text-red";
+            return "error";
         }
         return "";
     }
 
-    return <h2 className={getHistoryColor()}>{history.currency.legal ? CurrencyManager.formatUSD(amt) : history.currency.type + " x " + amt}</h2>;
-}
-
-export function BalanceLabel({userRelation, groupBalances, size}) {
+    function getTooltip(amt, amtString) {
+        if (amt > 0) {
+            return `You are owed ${amtString}`;
+        }
+        if (amt < 0) {
+            return `You owe ${amtString}`;
+        }
+        return "You're not a part of this transaction."
+    }
 
     if (userRelation) {
         const legalBal = userRelation.balances["USD"];
-
-        function getBalanceColor() {
-            if (legalBal > 0) {
-                return "primary";
-            }
-            if (legalBal < 0) {
-                return "error";
-            }
-            return "";
-        }
-    
-        return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+        return (
+            <Tooltip title={getTooltip(legalBal, CurrencyManager.formatUSD(Math.abs(legalBal)))}>
+                <Typography variant={size === "small" ? "h1" : "h2"} color={getColor(legalBal)}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+            </Tooltip>
+        )
     }
 
     if (groupBalances) {
-        let legalBal = groupBalances[SessionManager.getUserId()]["USD"];
-
-        function getBalanceColor() {
-            if (legalBal > 0) {
-                return "primary";
-            }
-            if (legalBal < 0) {
-                return "error";
-            }
-            return "";
+        if (!groupBalances[SessionManager.getUserId()]) {
+            return <div></div>;
         }
+        let legalBal = groupBalances[SessionManager.getUserId()]["USD"];
+        return (
+            <Tooltip title={getTooltip(legalBal, CurrencyManager.formatUSD(Math.abs(legalBal)))}>
+                <Typography variant={size === "small" ? "h1" : "h2"} color={getColor(legalBal)}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+            </Tooltip>
+        )
+    }
     
-        return <Typography variant={size === "small" ? "h1" : "h2"} color={getBalanceColor()}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+    if (history) {
+        const amt = history.getAmount();
+        return (
+            <Tooltip title={getTooltip(amt, history.currency.legal ? CurrencyManager.formatUSD(amt) : history.currency.type + " x " + Math.abs(amt))} >
+                <Typography variant="h2" color={getColor(amt)}>{history.currency.legal ? CurrencyManager.formatUSD(amt) : history.currency.type + " x " + amt}</Typography>
+            </Tooltip>
+        )
+    }
+
+    if (transaction) {
+        if (!transaction.balances[SessionManager.getUserId()]) {
+            return (
+                <Tooltip title={getTooltip(0, "")}>
+                    <Typography variant="h2">{CurrencyManager.formatUSD(0)}</Typography>
+                </Tooltip>
+            )
+        }
+        const amt = transaction.balances[SessionManager.getUserId()];
+        return (
+            <Tooltip title={getTooltip(amt, transaction.currency.legal ? CurrencyManager.formatUSD(amt) : transaction.currency.type + " x " + Math.abs(amt))}>
+                <Typography variant="h2" color={getColor(amt)}>{transaction.currency.legal ? CurrencyManager.formatUSD(amt) : transaction.currency.type + " x " + amt}</Typography>
+            </Tooltip>
+        )
     }
 }
