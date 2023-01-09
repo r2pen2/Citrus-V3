@@ -301,13 +301,15 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
         volume = volume / 2;
 
+        const newTransactionTitle = newTransactionState.title ? newTransactionState.title : getPlaceholderName();
+
         // First, we have to create the transaction on the database so that the new transactionID can be placed into userRelationHistories
         const transactionManager = DBManager.getTransactionManager();
         transactionManager.setCreatedBy(SessionManager.getUserId());
         transactionManager.setCurrencyLegal(currencyState.legal);
         transactionManager.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
         transactionManager.setAmount(newTransactionState.total);
-        transactionManager.setTitle(newTransactionState.title);
+        transactionManager.setTitle(newTransactionTitle);
         transactionManager.setGroup(newTransactionState.group);
         for (const u of finalUsers) {
             transactionManager.updateBalance(u.id, u.delta);
@@ -330,7 +332,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         h1.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
                         h1.setGroup(newTransactionState.group);
                         h1.setTransaction(transactionManager.documentId);
-                        h1.setTransactionTitle(newTransactionState.title);
+                        h1.setTransactionTitle(newTransactionTitle);
                         
                         // Create a relationHistory for user2
                         const h2 = new UserRelationHistory();
@@ -339,7 +341,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         h2.setCurrencyType(currencyState.legal ? currencyState.legalType : currencyState.emojiType);
                         h2.setGroup(newTransactionState.group);
                         h2.setTransaction(transactionManager.documentId);
-                        h2.setTransactionTitle(newTransactionState.title);
+                        h2.setTransactionTitle(newTransactionTitle);
 
                         // Add this relation to both users
                         const user1Manager = userManagers[user1.id] ? userManagers[user1.id] : DBManager.getUserManager(user1.id);
@@ -813,15 +815,25 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         return allUsers;
     }
 
+    function getPlaceholderName() {
+        if (!newTransactionState.total) {
+            return "Enter Name";
+        }
+        const currency = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
+        const currencyName = CurrencyManager.getCurrencyName(currency, true);
+        const capitalizedCurrency = currencyName.substring(0, 1).toUpperCase() + currencyName.substring(1);
+        return `${newTransactionState.total} ${capitalizedCurrency}`;
+    }
+
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
                 <AvatarStack ids={getInvolvedUsers()} size={70}/>
                 <h2 className="mt-5">{newTransactionState.title ? '"' + newTransactionState.title + '"' : '""'}</h2>
-                <TextField autoFocus id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
+                <TextField id="name-input" placeholder={getPlaceholderName()} variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
                     <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => handleLegalButtonPress()}>{currencyState.legal ? "$" : "😉"}</Button>
-                    <TextField id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : "\0"} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
+                    <TextField autoFocus id="amount-input" type="number" label="Amount" value={newTransactionState.total ? newTransactionState.total : "\0"} placeholder={getTextfieldPlaceholder()} onChange={updateAmount} variant="standard"/>
                     <Select className="w-25" id="currency-type-input" value={currencyState.legal ? currencyState.legalType : currencyState.emojiType} onChange={e => handleCurrencyTypeChange(e)} >
                         { populateCurrencyTypeSelect() }
                     </Select>
@@ -840,7 +852,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 { renderIOUCheckbox() }
             </div>
 
-            <Button variant="contained" color="primary" className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (newTransactionState.title.length <= 0) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
+            <Button variant="contained" color={newTransactionState.title ? "primary" : "info"} className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
             
             <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">

@@ -32,4 +32,19 @@ export class CurrencyManager {
         return formatter.format(num);
     }
 
+    static getCurrencyName(currency, plural) {
+        switch (currency) {
+            case this.legalCurrencies.USD:
+                return plural ? "dollars" : "dollar";
+            case this.emojiCurrencies.BEER:
+                return plural ? "beers" : "beer";
+            case this.emojiCurrencies.PIZZA:
+                return plural ? "pizzas" : "pizza";
+            case this.emojiCurrencies.COFFEE:
+                return plural ? "coffees" : "coffee";
+            default:
+                return "";
+        }
+    }
+
 }
