@@ -2,15 +2,13 @@
 import "./dashboard.scss";
 
 // Library imports
-import { Backdrop } from "@mui/material"
 import { Route, Routes } from "react-router-dom";
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 
 // Component imports
 import BottomNav from "./navigation/BottomNav";
 import People from "./tabs/People";
 import NewTransaction from "./tabs/NewTransaction";
-import Shortcut from "./tabs/Shortcut";
 import UserGroups from "./tabs/UserGroups";
 import Transaction from "./routes/Transaction";
 import Group from "./routes/Group";
