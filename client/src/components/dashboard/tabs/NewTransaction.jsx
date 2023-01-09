@@ -18,7 +18,7 @@ import { CurrencyManager } from "../../../api/currencyManager";
 import { RouteManager } from "../../../api/routeManager";
 import { DBManager } from "../../../api/db/dbManager";
 import { UserRelationHistory } from "../../../api/db/objectManagers/userManager";
-import { AvatarIcon } from '../../resources/Avatars';
+import { AvatarIcon, AvatarStack } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
 
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -800,10 +800,24 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
     }
     
+    function getInvolvedUsers() {
+        let allUsers = [];
+        for (const u of paidByCheckedUsers) {
+            allUsers.push(u);
+        }
+        for (const u of splitCheckedUsers) {
+            if (!allUsers.includes(u)) {
+                allUsers.push(u);
+            }
+        }
+        return allUsers;
+    }
+
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="d-flex flex-column vh-60 w-100 align-items-center justify-content-center gap-10">
-                <h2>{newTransactionState.title ? '"' + newTransactionState.title + '"' : '""'}</h2>
+                <AvatarStack ids={getInvolvedUsers()} size={70}/>
+                <h2 className="mt-5">{newTransactionState.title ? '"' + newTransactionState.title + '"' : '""'}</h2>
                 <TextField autoFocus id="name-input" placeholder="Enter Name" variant="standard" value={newTransactionState.title} onChange={updateTitle}/>
                 <section className="d-flex flex-row justify-space-between gap-10">
                     <Button className="w-25" variant="outlined" endIcon={<ArrowDropDownIcon />} onClick={() => handleLegalButtonPress()}>{currencyState.legal ? "$" : "😉"}</Button>
@@ -857,7 +871,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center m-2">
                         <ToggleButtonGroup color="primary" value={splitTab} exclusive onChange={e => {setSplitTab(e.target.value)}}>
-                            <ToggleButton value="even" disabled={!currencyState.legal && newTransactionState.total % newTransactionState.users.length !== 0}>Even</ToggleButton>
+                            <ToggleButton value="even" disabled={!currencyState.legal && newTransactionState.total % splitCheckedUsers.length !== 0}>Even</ToggleButton>
                             <ToggleButton value="manual">Manual</ToggleButton>
                         </ToggleButtonGroup>
                     </section>
