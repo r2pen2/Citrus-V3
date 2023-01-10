@@ -303,6 +303,35 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
         const newTransactionTitle = newTransactionState.title ? newTransactionState.title : getPlaceholderName();
 
+        let settleGroups = {};
+    
+        if (isIOU) {
+            // Find out how much goes to each group
+            const curr = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
+            const fromManager = DBManager.getUserManager(paidByCheckedUsers[0]);
+            const userRelation = await fromManager.getRelationWithUser(splitCheckedUsers[0]);
+            const totalDebt = userRelation.balances[curr] ? (userRelation.balances[curr] < 0 ? userRelation.balances[curr] : 0) : 0; 
+            let amtLeft = newTransactionState.total < Math.abs(totalDebt) ? newTransactionState.total : Math.abs(totalDebt);
+            for (const history of userRelation.getHistory()) {
+              if (amtLeft > 0 && history.amount < 0) {
+                const group = history.group;
+                if (Math.abs(history.amount) > amtLeft) {
+                  // This will be the last history we look at
+                  if (group) {
+                    settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
+                  }
+                  amtLeft = 0;
+                } else {
+                  if (group) {
+                    const diff = history.amount < 0 ? history.amount : 0;
+                    settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
+                  }
+                  amtLeft += history.amount < 0 ? history.amount : 0;
+                }
+              }
+            }   
+        }
+
         // First, we have to create the transaction on the database so that the new transactionID can be placed into userRelationHistories
         const transactionManager = DBManager.getTransactionManager();
         transactionManager.setCreatedBy(SessionManager.getUserId());
@@ -311,6 +340,14 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         transactionManager.setAmount(newTransactionState.total);
         transactionManager.setTitle(newTransactionTitle);
         transactionManager.setGroup(newTransactionState.group);
+
+        if (isIOU) {
+            // Add settle Groups
+            for (const k of Object.keys(settleGroups)) {
+                transactionManager.updateSettleGroup(k, settleGroups[k]);
+            }
+        }
+
         for (const u of finalUsers) {
             transactionManager.updateBalance(u.id, u.delta);
         }
@@ -365,11 +402,12 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             success = (success && pushed);
         }
 
+        const currencyKey = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
+
         if (newTransactionState.group) {
             // If there's a group, add data to group
             const groupManager = DBManager.getGroupManager(newTransactionState.group);
             groupManager.addTransaction(transactionManager.documentId);
-            const currencyKey = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
             for (const user of newTransactionState.users) {
                 const userBal = await groupManager.getUserBalance(user.id);
                 userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
@@ -377,6 +415,21 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             }
             const pushed = await groupManager.push();
             success = (success && pushed);
+        }
+
+        if (isIOU) {
+            for (const k of Object.keys(settleGroups)) {
+                const groupManager = DBManager.getGroupManager(k);
+                const fromBal = await groupManager.getUserBalance(paidByCheckedUsers[0]);
+                fromBal[currencyKey] = fromBal[currencyKey] ? fromBal[currencyKey] + settleGroups[k] : settleGroups[k];
+                const toBal = await groupManager.getUserBalance(splitCheckedUsers[0]);
+                toBal[currencyKey] = toBal[currencyKey] ? toBal[currencyKey] - settleGroups[k] : -1 * settleGroups[k];
+                groupManager.updateBalance(paidByCheckedUsers[0], fromBal);
+                groupManager.updateBalance(splitCheckedUsers[0], toBal);
+                groupManager.addTransaction(transactionManager.documentId);
+                const pushed = await groupManager.push();
+                success = (success && pushed);
+            }
         }
 
         if (success) {

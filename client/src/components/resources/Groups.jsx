@@ -5,7 +5,8 @@ import "./style/groups.scss";
 import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import GroupsIcon from '@mui/icons-material/Groups';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import StarIcon from '@mui/icons-material/Star';
 
 // Component Imports
 import {Breadcrumbs} from "./Navigation";
@@ -243,6 +244,7 @@ export function GroupDetail() {
   function renderHistory() {
     return groupTransactions.map((transaction, index) => {
 
+      
       function handleClick(e) {
         RouteManager.redirectToTransaction(transaction.documentId);
       }
@@ -257,25 +259,73 @@ export function GroupDetail() {
         return ids;
       }
 
-      return (
-        <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-          <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-            <div className="d-flex flex-column align-items-left w-100">
-              <div className="d-flex flex-row align-items-center gap-10">
-                <h2>
-                  { transaction.data.title }
-                </h2>
+      let groupTransaction = false;
+      let privateTransaction = false;
+
+      if (transaction.data) {
+        groupTransaction = Object.keys(transaction.data.settleGroups).length <= 0 && transaction.data.group;
+        privateTransaction = Object.keys(transaction.data.settleGroups).length > 0 && Object.keys(transaction.data.balances).includes(SessionManager.getUserId());
+      }
+
+      if (groupTransaction) {
+        return (
+          <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+              <div className="d-flex flex-column align-items-left w-100">
+                <div className="d-flex flex-row align-items-center gap-10">
+                  <h2>
+                    { transaction.data.title }
+                  </h2>
+                </div>
+                <p>{getDateString(transaction.data.date)}</p>
               </div>
-              <p>{getDateString(transaction.data.date)}</p>
+              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                <AvatarStack size={40} ids={getIds()} max={8} />
+              </section>
             </div>
-            <section className="d-flex flex-column align-items-center justify-content-right gap-10">
-              <BalanceLabel groupId={groupId} transaction={transaction.data} />
-              <AvatarStack size={40} ids={getIds()} max={8} />
-            </section>
-          </div>
-        </OutlinedCard>
-      )
+          </OutlinedCard>
+        )
+      }
+
+      function renderStar() {
+        if (transaction.data.settleGroups[groupId] !== transaction.data.amount) {
+          return (
+            <Tooltip title="This transaction cleared your group debt with someone!" >
+              <StarIcon color="primary"/>
+            </Tooltip>
+          )
+        }
+      }
+
+      if (privateTransaction) {
+        return (
+          <OutlinedCard onClick={handleClick} backgroundColor="#f0f0f0" hoverHighlight={true} key={index}>
+            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+              <div className="d-flex flex-column align-items-left w-100">
+                <div className="d-flex flex-row align-items-center gap-10">
+                  <Tooltip title="This transaction didn't happen within the context of this group. It does, however, effect your debt with someone in it. Only you two can see this transaction." >
+                    <VisibilityOffIcon />
+                  </Tooltip>
+                  <h2>
+                    { transaction.data.title }
+                  </h2>
+                </div>
+                <p>{getDateString(transaction.data.date)}</p>
+              </div>
+              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                <div className="d-flex flex-row gap-10 align-items-center">
+                  <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                  { renderStar() }
+                </div>
+                <AvatarStack size={40} ids={getIds()} max={8} />
+              </section>
+            </div>
+          </OutlinedCard>
+        )
+      }
     })
+
   }
 
   function renderButtons() {
@@ -290,6 +340,11 @@ export function GroupDetail() {
     }
   }
 
+  function handleDelete() {
+    const groupManager = DBManager.getGroupManager(groupId);
+    groupManager.cleanDelete();
+  }
+
   return (
     <div className="d-flex flex-column align-items-center">
       <section className="d-flex flex-column align-items-center m-5 gap-10">
@@ -297,6 +352,7 @@ export function GroupDetail() {
         <h1>{groupData.name}</h1>
         <BalanceLabel groupBalances={groupData.balances} size="large" />
         <EmojiBalanceBar groupBalances={groupData.balances} size="large"/>
+        <Button color="error" variant="outlined" onClick={handleDelete}>Delete Group</Button>
       </section>
       { renderButtons() }
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
@@ -348,7 +404,7 @@ export function GroupAdd() {
             <Button variant="contained" color="primary" disabled={!checkSubmitEnable()} onClick={() => handleCodeSubmit()}>
                 Join
             </Button>
-            <Button variant="outlined" color="primary" onClick={() => RouteManager.redirect("/dashboard/groups/new")}>
+            <Button variant="outlined" color="primary" onClick={() => RouteManager.redirect("/dashboard/group/new")}>
                 Or create a new group
             </Button>
             <Typography variant="subtitle1" color="error" hidden={!codeError}>Group code invalid!</Typography>

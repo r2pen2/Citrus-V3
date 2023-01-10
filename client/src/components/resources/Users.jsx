@@ -139,10 +139,8 @@ export function UserDetail() {
     const curr = settleCurrency.legal ? settleCurrency.legalType : settleCurrency.emojiType;
     const totalDebt = userRelation.balances[curr] ? (userRelation.balances[curr] < 0 ? userRelation.balances[curr] : 0) : 0; 
     let amtLeft = settleAmount < Math.abs(totalDebt) ? settleAmount : Math.abs(totalDebt);
-    console.log(amtLeft);
     for (const history of userRelation.getHistory()) {
-      console.log(history);
-      if (amtLeft > 0) {
+      if (amtLeft > 0 && history.amount < 0) {
         const group = history.group;
         if (Math.abs(history.amount) > amtLeft) {
           // This will be the last history we look at
@@ -151,10 +149,11 @@ export function UserDetail() {
           }
           amtLeft = 0;
         } else {
+          const diff = history.amount < 0 ? history.amount : 0;
           if (group) {
-            settleGroups[group] = settleGroups[group] ? settleGroups[group] - history.amount : - history.amount; 
+            settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
           }
-          amtLeft += history.amount > 0 ? -1 * history.amount : history.amount;
+          amtLeft += history.amount < 0 ? history.amount : 0;
         }
       }
     }
@@ -224,6 +223,8 @@ export function UserDetail() {
         const pushed = await groupManager.push();
         success = (success && pushed);
     }
+
+    console.log(settleGroups)
 
     if (success) {
         RouteManager.redirectToTransaction(transactionManager.documentId);

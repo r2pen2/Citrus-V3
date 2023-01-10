@@ -415,4 +415,12 @@ export class GroupManager extends ObjectManager {
         const balanceUpdate = new Update(this.fields.BALANCES, key, balance);
         super.addChange(balanceUpdate);
     }
+
+    // ================= Misc Operation ================= //
+    async cleanDelete() {
+        return new Promise(async (resolve, reject) => {
+            await this.deleteDocument();
+            resolve(true);
+        })
+    }
 }

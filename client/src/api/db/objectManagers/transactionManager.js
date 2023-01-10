@@ -331,6 +331,12 @@ export class TransactionManager extends ObjectManager {
                     relation.removeHistory(this.documentId); // Transaction matches id! Remove history.
                     transactionUserManager.updateRelation(relationKey[0], relation); // Update relation
                 }
+                const settleGroups = await this.getSettleGroups();
+                for (const k of Object.keys(settleGroups)) {
+                    const groupManager = DBManager.getGroupManager(k);
+                    groupManager.removeTransaction(this.documentId);
+                    await groupManager.push();
+                }
                 const pushed = await transactionUserManager.push();
                 if (!pushed) {
                     resolve(false);
