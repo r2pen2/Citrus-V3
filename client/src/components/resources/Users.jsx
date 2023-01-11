@@ -2,12 +2,13 @@
 import "./style/users.scss";
 
 // Library imports
-import { Button, Tooltip, Dialog, TextField, Select, MenuItem } from '@mui/material';
+import { Button, Tooltip, Dialog, TextField, Select, InputAdornment, MenuItem } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { OutlinedCard } from "./Surfaces";
 import GroupsIcon from '@mui/icons-material/Groups';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Component imports
 import { AvatarIcon } from "./Avatars";
@@ -31,6 +32,7 @@ export function UserDetail() {
   const [settleOpen, setSettleOpen] = useState(false);
   const [settleCurrency, setSettleCurrency] = useState({legal: true, legalType: CurrencyManager.legalCurrencies.USD, emojiType: CurrencyManager.emojiCurrencies.BEER});
   const [settleAmount, setSettleAmount] = useState(0);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
 
@@ -65,22 +67,24 @@ export function UserDetail() {
         RouteManager.redirectToTransaction(history.transaction);
       }
       
-      return (
-        <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-          <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-            <div className="d-flex flex-column align-items-left">
-              <div className="d-flex flex-row align-items-center gap-10">
-                { renderIcon() }
-                <h2>
-                  { history.transactionTitle }
-                </h2>
+      if (search.length === 0 || history.transactionTitle.toLowerCase().includes(search.toLowerCase())) {
+        return (
+          <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+              <div className="d-flex flex-column align-items-left">
+                <div className="d-flex flex-row align-items-center gap-10">
+                  { renderIcon() }
+                  <h2>
+                    { history.transactionTitle }
+                  </h2>
+                </div>
+                <p>{getDateString(history.date)}</p>
               </div>
-              <p>{getDateString(history.date)}</p>
+              <BalanceLabel history={history} />
             </div>
-            <BalanceLabel history={history} />
-          </div>
-        </OutlinedCard>
-      )
+          </OutlinedCard>
+        )
+      } 
     })
   }
 
@@ -271,6 +275,15 @@ function getOweMessage() {
           </Tooltip>
       </section>
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
+        <TextField 
+          variant="standard"
+          placeholder="Search transcations..."
+          onChange={(e) => setSearch(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="end">
+              <SearchIcon />
+            </InputAdornment>,
+          }} />
         { renderHistory() }
       </section>
 

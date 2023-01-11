@@ -2,11 +2,12 @@
 import "./style/groups.scss";
 
 // Library Imports
-import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, Tooltip } from "@mui/material";
+import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, InputAdornment, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import StarIcon from '@mui/icons-material/Star';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Component Imports
 import {Breadcrumbs} from "./Navigation";
@@ -220,6 +221,8 @@ export function GroupDetail() {
     name: "",
     balances: {}
   });
+
+  const [search, setSearch] = useState("");
   
   const [groupTransactions, setGroupTransactions] = useState([]);
 
@@ -268,24 +271,27 @@ export function GroupDetail() {
       }
 
       if (groupTransaction) {
-        return (
-          <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-              <div className="d-flex flex-column align-items-left w-100">
-                <div className="d-flex flex-row align-items-center gap-10">
-                  <h2>
-                    { transaction.data.title }
-                  </h2>
+        if (search.length === 0 || transaction.data.title.toLowerCase().includes(search.toLowerCase())) {
+          return (
+            <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+              <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+                <div className="d-flex flex-column align-items-left w-100">
+                  <div className="d-flex flex-row align-items-center gap-10">
+                    <h2>
+                      { transaction.data.title }
+                    </h2>
+                  </div>
+                  <p>{getDateString(transaction.data.date)}</p>
                 </div>
-                <p>{getDateString(transaction.data.date)}</p>
+                <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                  <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                  <AvatarStack size={40} ids={getIds()} max={8} />
+                </section>
               </div>
-              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
-                <BalanceLabel groupId={groupId} transaction={transaction.data} />
-                <AvatarStack size={40} ids={getIds()} max={8} />
-              </section>
-            </div>
-          </OutlinedCard>
-        )
+            </OutlinedCard>
+          )
+
+        }
       }
 
       function renderStar() {
@@ -299,30 +305,32 @@ export function GroupDetail() {
       }
 
       if (privateTransaction) {
-        return (
-          <OutlinedCard onClick={handleClick} backgroundColor="#f0f0f0" hoverHighlight={true} key={index}>
-            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-              <div className="d-flex flex-column align-items-left w-100">
-                <div className="d-flex flex-row align-items-center gap-10">
-                  <Tooltip title="This transaction didn't happen within the context of this group. It does, however, effect your debt with someone in it. Only you two can see this transaction." >
-                    <VisibilityOffIcon />
-                  </Tooltip>
-                  <h2>
-                    { transaction.data.title }
-                  </h2>
+        if (search.length === 0 || transaction.data.title.toLowerCase().includes(search.toLowerCase())) {
+          return (
+            <OutlinedCard onClick={handleClick} backgroundColor="#f0f0f0" hoverHighlight={true} key={index}>
+              <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+                <div className="d-flex flex-column align-items-left w-100">
+                  <div className="d-flex flex-row align-items-center gap-10">
+                    <Tooltip title="This transaction didn't happen within the context of this group. It does, however, effect your debt with someone in it. Only you two can see this transaction." >
+                      <VisibilityOffIcon />
+                    </Tooltip>
+                    <h2>
+                      { transaction.data.title }
+                    </h2>
+                  </div>
+                  <p>{getDateString(transaction.data.date)}</p>
                 </div>
-                <p>{getDateString(transaction.data.date)}</p>
+                <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                  <div className="d-flex flex-row gap-10 align-items-center">
+                    <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                    { renderStar() }
+                  </div>
+                  <AvatarStack size={40} ids={getIds()} max={8} />
+                </section>
               </div>
-              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
-                <div className="d-flex flex-row gap-10 align-items-center">
-                  <BalanceLabel groupId={groupId} transaction={transaction.data} />
-                  { renderStar() }
-                </div>
-                <AvatarStack size={40} ids={getIds()} max={8} />
-              </section>
-            </div>
-          </OutlinedCard>
-        )
+            </OutlinedCard>
+          )
+        }
       }
     })
 
@@ -356,6 +364,15 @@ export function GroupDetail() {
       </section>
       { renderButtons() }
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
+        <TextField 
+          variant="standard"
+          placeholder="Search transcations..."
+          onChange={(e) => setSearch(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="end">
+              <SearchIcon />
+            </InputAdornment>,
+          }} />
         { renderHistory() }
       </section>
     </div>
