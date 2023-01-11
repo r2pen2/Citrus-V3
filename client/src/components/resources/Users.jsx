@@ -145,13 +145,20 @@ export function UserDetail() {
         if (Math.abs(history.amount) > amtLeft) {
           // This will be the last history we look at
           if (group) {
-            settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
-            amtLeft = 0;
+            const groupManager = DBManager.getGroupManager(group);
+            const bal = await groupManager.getUserBalance(SessionManager.getUserId());
+            const settleGroupAmt = Math.abs(bal[curr]) > amtLeft ? amtLeft : Math.abs(bal[curr]);
+            if (bal[curr] < 0) {
+              settleGroups[group] = settleGroups[group] ? settleGroups[group] + settleGroupAmt : settleGroupAmt; 
+              amtLeft = 0;
+            }
           }
         } else {
-          const diff = history.amount < 0 ? history.amount : 0;
           if (group) {
-            settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
+            const groupManager = DBManager.getGroupManager(group);
+            const bal = await groupManager.getUserBalance(SessionManager.getUserId());
+            const settleGroupAmt = Math.abs(bal[curr]) > Math.abs(history.amount) ? Math.abs(history.amount) : Math.abs(bal[curr]);
+            settleGroups[group] = settleGroups[group] ? settleGroups[group] + settleGroupAmt : settleGroupAmt;
             amtLeft += history.amount < 0 ? history.amount : 0;
           }
         }
