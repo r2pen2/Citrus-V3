@@ -146,14 +146,14 @@ export function UserDetail() {
           // This will be the last history we look at
           if (group) {
             settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
+            amtLeft = 0;
           }
-          amtLeft = 0;
         } else {
           const diff = history.amount < 0 ? history.amount : 0;
           if (group) {
             settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
+            amtLeft += history.amount < 0 ? history.amount : 0;
           }
-          amtLeft += history.amount < 0 ? history.amount : 0;
         }
       }
     }
@@ -167,6 +167,7 @@ export function UserDetail() {
     transactionManager.setTitle(newTransactionTitle);
     transactionManager.updateBalance(SessionManager.getUserId(), settleAmount);
     transactionManager.updateBalance(userId, -1 * settleAmount);
+    transactionManager.setIsIOU(true);
     
     // Add settle Groups
     for (const k of Object.keys(settleGroups)) {

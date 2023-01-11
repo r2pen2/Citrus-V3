@@ -316,17 +316,17 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
               if (amtLeft > 0 && history.amount < 0) {
                 const group = history.group;
                 if (Math.abs(history.amount) > amtLeft) {
-                  // This will be the last history we look at
-                  if (group) {
-                    settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
-                  }
-                  amtLeft = 0;
+                    // This will be the last history we look at
+                    if (group) {
+                        settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
+                        amtLeft = 0;
+                    }
                 } else {
-                  if (group) {
-                    const diff = history.amount < 0 ? history.amount : 0;
-                    settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
-                  }
-                  amtLeft += history.amount < 0 ? history.amount : 0;
+                    if (group) {
+                        const diff = history.amount < 0 ? history.amount : 0;
+                        settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
+                        amtLeft += history.amount < 0 ? history.amount : 0;
+                    }
                 }
               }
             }   
@@ -340,6 +340,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         transactionManager.setAmount(newTransactionState.total);
         transactionManager.setTitle(newTransactionTitle);
         transactionManager.setGroup(newTransactionState.group);
+        transactionManager.setIsIOU(isIOU);
 
         if (isIOU) {
             // Add settle Groups

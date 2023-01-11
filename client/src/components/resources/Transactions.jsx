@@ -30,8 +30,8 @@ export function TransactionDetail() {
     balances: {},
     createdBy: null,
     group: null,
+    isIOU: null,
   });
-  const [isIOU, setIsIOU] = useState(true);
 
   function getCurrencyString(balance) {
     return transactionData.currency.legal ? CurrencyManager.formatUSD(Math.abs(balance)) : transactionData.currency.type + " x " + Math.abs(balance);
@@ -48,7 +48,12 @@ export function TransactionDetail() {
       const tm = DBManager.getTransactionManager(transactionId);
       const data = await tm.fetchData();
       setTransactionData(data);
-      setIsIOU(Object.keys(data.balances).length === 2);
+      let onePayer = false;
+      for (const k of Object.keys(transactionData.balances)) {
+        if (transactionData.balances[k] === transactionData.amount) {
+          onePayer = true;
+        }
+      }
     }
 
     // Fetch transaction data on load
@@ -111,7 +116,7 @@ export function TransactionDetail() {
   }
 
   function renderUserBalances() {
-    if (!isIOU) {
+    if (!transactionData.isIOU) {
       return (
         <section className="d-flex flex-column w-50 justify-content-start">
         <h2>Paid by:</h2>
@@ -124,7 +129,7 @@ export function TransactionDetail() {
   }
 
   function renderAvatars() {
-    if (isIOU) {
+    if (transactionData.isIOU) {
 
       let fromId = null;
       let toId = null;
