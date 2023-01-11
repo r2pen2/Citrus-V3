@@ -240,6 +240,20 @@ export function UserDetail() {
     
 }
 
+function getSettleColor() {
+  if (userRelation.balances["USD"] < 0) {
+    return "primary";
+  }
+  return "warning";
+}
+
+function getOweMessage() {
+  if (userRelation.balances["USD"] >= 0) {
+    return " (You don't owe them any money right now)";
+  }
+  return "";
+}
+
   return (
     <div className="d-flex flex-column align-items-center">
       <section className="d-flex flex-column align-items-center m-5 gap-10">
@@ -249,8 +263,12 @@ export function UserDetail() {
         <EmojiBalanceBar userRelation={userRelation} size="large"/>
       </section>
       <section className="d-flex flex-row justify-content-between w-50 gap-10">
-        <Button className="w-100" variant="contained" onClick={() => setSettleOpen(true)}>Settle</Button>
-        <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
+          <Tooltip title={"Pay off your debt with this user." + getOweMessage()}>
+            <Button className="w-100" variant="contained" color={getSettleColor()} onClick={() => setSettleOpen(true)}>Settle</Button>
+          </Tooltip>
+          <Tooltip title={"Pay off your debt via Venmo." + getOweMessage()}>
+            <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
+          </Tooltip>
       </section>
       <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
         { renderHistory() }
