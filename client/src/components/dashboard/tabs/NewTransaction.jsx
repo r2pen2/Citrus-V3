@@ -1,6 +1,6 @@
 // Library imports
 import { useState, useEffect } from 'react';
-import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea } from '@mui/material';
+import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea, Switch } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -240,6 +240,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     const [splitTab, setSplitTab] = useState("even");
     const [paidByCheckedUsers, setPaidByCheckedUsers] = useState([SessionManager.getUserId()]);
     const [splitCheckedUsers, setSplitCheckedUsers] = useState(initSplitCheckedUsers());
+    const [splitPercentages, setSplitPercentages] = useState(false);
+    const [paidPercentages, setPaidPercentages] = useState(false);
 
     function initSplitCheckedUsers() {
         let a = [];
@@ -289,11 +291,20 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 if (paidByTab === "even") {
                     // Paid by was even: If this user is one of the payers, their paidByManualAmount will be 1/n the total price
                     u.paidByManualAmount = paidByCheckedUsers.includes(u.id) ? (newTransactionState.total / paidByCheckedUsers.length) : 0;
-                } // No need for an else. If paidBy was manual, the amount is already set
+                } else {
+                    // Might be percentage split
+                    if (paidPercentages) {
+                        u.paidByManualAmount = newTransactionState.total * (u.paidByManualAmount / 100);
+                    }
+                }
                 if (splitTab === "even") {
                     // Do the same thing for split
                     u.splitManualAmount = splitCheckedUsers.includes(u.id) ? (newTransactionState.total / splitCheckedUsers.length) : 0;
-                } // Still no need for an else
+                } else {
+                    if (splitPercentages) {
+                        u.splitManualAmount = newTransactionState.total * (u.splitManualAmount / 100);
+                    }
+                }
             }
             u["delta"] = u.paidByManualAmount - u.splitManualAmount; // Add delta field 
             finalUsers.push(u); // Push user to final array
@@ -488,8 +499,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (newTransactionState.users.length !== splitCheckedUsers.length) {
             numberString = ` (${splitCheckedUsers.length}/${newTransactionState.users.length})`;
         }
-        if (splitTab === "manual" && getTotalSplitAmounts() !== newTransactionState.total) {
-            return "manually (!)"
+        if (splitTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total)) {
+            return "manually (!)";
         }
         return splitTab === "even" ? `evenly${numberString}` : `manually${numberString}`;
     }
@@ -524,6 +535,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function formatTotalPaidByAmounts() {
         const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        if (paidPercentages) {
+            return getTotalPaidByAmounts() + "%";
+        }
         return `${typeString}${getTotalPaidByAmounts()}`;
     }
 
@@ -539,6 +553,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function formatTotalSplitAmounts() {
         const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        if (splitPercentages) {
+            return getTotalSplitAmounts() + "%";
+        }
         return `${typeString}${getTotalSplitAmounts()}`;
     }
 
@@ -660,17 +677,17 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <TextField id="amount-input" type="number" label="Amount" value={user.paidByManualAmount ? user.paidByManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                        <TextField id="amount-input" type="number" label={paidPercentages ? "%" : "Amount"} value={user.paidByManualAmount ? user.paidByManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
                     </section>
                 </div>
             )
         }
 
         function getTotalWarning() {
-            if (getTotalPaidByAmounts() < newTransactionState.total) {
+            if (getTotalPaidByAmounts() < (paidPercentages ? 100 : newTransactionState.total)) {
                 return "Too low ✘"
             }
-            if (getTotalPaidByAmounts() > newTransactionState.total) {
+            if (getTotalPaidByAmounts() > (paidPercentages ? 100 : newTransactionState.total)) {
                 return "Too high ✘";
             }
             return "Good ✓";
@@ -687,6 +704,14 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
         if (paidByTab === "manual") {
             return sortedUsers.map((user, index) => {
+                if (index === 0) {
+                    return (
+                        <div key={index} className="d-flex flex-column w-100 align-items-center">
+                            <FormControlLabel control={<Checkbox checked={paidPercentages} onClick={() => setPaidPercentages(!paidPercentages)}/>}label="%" />
+                            { renderManualUser(user, index) }
+                        </div>
+                    )
+                }
                 if (index < sortedUsers.length - 1) {
                     return renderManualUser(user, index);
                 } else {
@@ -695,8 +720,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                             { renderManualUser(user, index) }
                             <div className="d-flex flex-row justify-content-end w-80">
                                 <div className="d-flex flex-column align-items-end">
-                                    <p className={"font-weight-bold " + (getTotalPaidByAmounts() !== newTransactionState.total ? "text-red" : "color-primary")}>Total: { formatTotalPaidByAmounts() }</p>
-                                    <p className={getTotalPaidByAmounts() !== newTransactionState.total ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
+                                    <p className={"font-weight-bold " + (getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary")}>Total: { formatTotalPaidByAmounts() }</p>
+                                    <p className={getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
                                 </div>
                             </div>
                         </div>
@@ -777,17 +802,17 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <TextField id="amount-input" type="number" label="Amount" value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                        <TextField id="amount-input" type="number" label={splitPercentages ? "%" : "Amount"} value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
                     </section>
                 </div>
             )
         }
 
         function getTotalWarning() {
-            if (getTotalSplitAmounts() < newTransactionState.total) {
+            if (getTotalSplitAmounts() < (splitPercentages ? 100 : newTransactionState.total)) {
                 return "Too low ✘"
             }
-            if (getTotalSplitAmounts() > newTransactionState.total) {
+            if (getTotalSplitAmounts() > (splitPercentages ? 100 : newTransactionState.total)) {
                 return "Too high ✘";
             }
             return "Good ✓";
@@ -804,6 +829,14 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
         if (splitTab === "manual") {
             return sortedUsers.map((user, index) => {
+                if (index === 0) {
+                    return (
+                        <div key={index} className="d-flex flex-column w-100 align-items-center">
+                            <FormControlLabel control={<Checkbox checked={splitPercentages} onClick={() => setSplitPercentages(!splitPercentages)}/>}label="%" />
+                            { renderManualUser(user, index) }
+                        </div>
+                    )
+                }
                 if (index < sortedUsers.length - 1) {
                     return renderManualUser(user, index);
                 } else {
@@ -812,8 +845,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                             { renderManualUser(user, index) }
                             <div className="d-flex flex-row justify-content-end w-80">
                                 <div className="d-flex flex-column align-items-end">
-                                    <p className={"font-weight-bold " + (getTotalSplitAmounts() !== newTransactionState.total ? "text-red" : "color-primary")}>Total: { formatTotalSplitAmounts() }</p>
-                                    <p className={getTotalSplitAmounts() !== newTransactionState.total ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
+                                    <p className={"font-weight-bold " + (getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary")}>Total: { formatTotalSplitAmounts() }</p>
+                                    <p className={getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
                                 </div>
                             </div>
                         </div>
@@ -913,7 +946,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 { renderIOUCheckbox() }
             </div>
 
-            <Button variant="contained" color={newTransactionState.title ? "primary" : "info"} className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
+            <Button variant="contained" color={newTransactionState.title ? "primary" : "info"} className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total))} onClick={() => submitAmount()}>Submit</Button>
             
             <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">
@@ -931,7 +964,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         { renderPaidByTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total) || (newTransactionState.total % paidByCheckedUsers.length !== 0 && !currencyState.legal)}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total)) || (paidByTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total)) || (newTransactionState.total % paidByCheckedUsers.length !== 0 && !currencyState.legal)}>Next</Button>
                     </section>
                 </div>
             </Dialog>
@@ -952,7 +985,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         { renderSplitTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={(e, r) => handleSplitDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handleSplitDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total))}>Next</Button>
                     </section>
                 </div>
             </Dialog>
