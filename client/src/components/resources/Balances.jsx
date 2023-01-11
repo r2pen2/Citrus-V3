@@ -135,7 +135,7 @@ export function BalanceLabel({userRelation, groupBalances, history, transaction,
         const legalBal = userRelation.balances["USD"];
         return (
             <Tooltip title={getTooltip(legalBal, CurrencyManager.formatUSD(Math.abs(legalBal)))}>
-                <Typography variant={size === "small" ? "h1" : "h2"} color={getColor(legalBal)}>{CurrencyManager.formatUSD(legalBal)}</Typography>
+                <Typography variant={size === "small" ? "h1" : "h2"} color={getColor(legalBal)}>{size === "small" ? CurrencyManager.formatUSD(legalBal) : CurrencyManager.formatUSD(legalBal, true)}</Typography>
             </Tooltip>
         )
     }

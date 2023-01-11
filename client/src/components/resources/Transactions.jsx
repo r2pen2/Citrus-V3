@@ -34,7 +34,11 @@ export function TransactionDetail() {
   });
 
   function getCurrencyString(balance) {
-    return transactionData.currency.legal ? CurrencyManager.formatUSD(Math.abs(balance)) : transactionData.currency.type + " x " + Math.abs(balance);
+    return transactionData.currency.legal ? CurrencyManager.formatUSD(balance) : transactionData.currency.type + " x " + balance;
+  }
+  
+  function getTitleString(balance) {
+    return transactionData.currency.legal ? CurrencyManager.formatUSD(balance, true) : transactionData.currency.type + " x " + balance;
   }
 
   useEffect(() => {
@@ -158,7 +162,7 @@ export function TransactionDetail() {
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
       <section className="d-flex flex-column align-items-center gap-10 m-5">
         <h2>{transactionData.title}</h2>
-        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getCurrencyString(transactionData.amount)}</h1>
+        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getTitleString(Math.abs(transactionData.amount))}</h1>
         { renderAvatars() }
       </section>
       { renderUserBalances() }
