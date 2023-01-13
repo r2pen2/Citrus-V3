@@ -336,18 +336,6 @@ export function GroupDetail() {
 
   }
 
-  function renderButtons() {
-    const showButtons = false;
-    if (showButtons) {
-      return (      
-        <section className="d-flex flex-row justify-content-between w-50 gap-10">
-          <Button className="w-100" variant="contained">Settle</Button>
-          <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
-        </section>
-      )
-    }
-  }
-
   function handleDelete() {
     const groupManager = DBManager.getGroupManager(groupId);
     groupManager.cleanDelete();
@@ -355,15 +343,14 @@ export function GroupDetail() {
 
   return (
     <div className="d-flex flex-column align-items-center">
-      <section className="d-flex flex-column align-items-center m-5 gap-10">
+      <section className="d-flex flex-column align-items-center gap-10">
         <AvatarStack ids={groupData.users} size={100}/>
         <h1>{groupData.name}</h1>
         <BalanceLabel groupBalances={groupData.balances} size="large" />
         <EmojiBalanceBar groupBalances={groupData.balances} size="large"/>
         <Button color="error" variant="outlined" onClick={handleDelete}>Delete Group</Button>
       </section>
-      { renderButtons() }
-      <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
+      <section className="d-flex flex-column align-items-center gap-10 w-75">
         <TextField 
           variant="standard"
           placeholder="Search transcations..."

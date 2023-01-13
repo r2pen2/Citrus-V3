@@ -1,9 +1,11 @@
 import "./style/balances.scss";
 import Badge from '@mui/material/Badge';
 import Tooltip from '@mui/material/Tooltip';
+import { useState, useEffect } from "react";
 import Typography from '@mui/material/Typography';
 import { CurrencyManager } from "../../api/currencyManager"; 
 import { SessionManager } from "../../api/sessionManager";
+import { DBManager } from "../../api/db/dbManager";
 
 export function EmojiBalanceBar({userRelation, groupBalances, size}) {
 
@@ -111,6 +113,7 @@ export function EmojiBalanceBar({userRelation, groupBalances, size}) {
 
 export function BalanceLabel({userRelation, groupBalances, history, transaction, groupId, size}) {
 
+
     function getColor(amt) {
         if (amt > 0) {
             return "primary";
@@ -132,7 +135,9 @@ export function BalanceLabel({userRelation, groupBalances, history, transaction,
     }
 
     if (userRelation) {
-        const legalBal = userRelation.balances["USD"];
+
+        const legalBal = userRelation.balances["USD"]
+
         return (
             <Tooltip title={getTooltip(legalBal, CurrencyManager.formatUSD(Math.abs(legalBal)))}>
                 <Typography variant={size === "small" ? "h1" : "h2"} color={getColor(legalBal)}>{size === "small" ? CurrencyManager.formatUSD(legalBal) : CurrencyManager.formatUSD(legalBal, true)}</Typography>
