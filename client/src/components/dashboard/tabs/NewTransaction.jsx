@@ -224,9 +224,18 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 if (groupData.id === checkedGroup) {
                     // Get user info
                     for (const groupMemberId of groupData.members) {
-                        const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
-                        let displayName = await groupMemberUserManager.getDisplayName();
-                        let pfpUrl = await groupMemberUserManager.getPfpUrl();
+                        let displayName, pfpUrl = null;
+                        if (usersData[groupMemberId]) {
+                            displayName = usersData[groupMemberId].personalData.displayName;
+                            pfpUrl = usersData[groupMemberId].personalData.pfpUrl;
+                        } else {
+                            const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
+                            displayName = await groupMemberUserManager.getDisplayName();
+                            pfpUrl = await groupMemberUserManager.getPfpUrl();
+                            const newData = { ...usersData };
+                            newData[groupMemberId] = groupMemberUserManager.data;
+                            setUsersData(newData);
+                        }
                         newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl, paidByManualAmount: null, splitManualAmount: null});
                     }
                 }

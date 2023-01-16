@@ -49,16 +49,16 @@ export function AvatarStack({ids, max, size}) {
 
 export function AvatarStackItem(props) {
 
-    const [pfpUrl, setPfpUrl] = useState(null);
-    const [name, setName] = useState(null);
-
     const { usersData, setUsersData } = useContext(UsersContext);
+
+    const [pfpUrl, setPfpUrl] = useState(usersData[props.userId] ? usersData[props.userId].personalData.pfpUrl : null);
+    const [name, setName] = useState(usersData[props.userId] ? usersData[props.userId].personalData.displayName : null);
+
 
     useEffect(() => {
 
         async function fetchUserData() {
-            let photo = null;
-            let displayName = null;
+            let photo, displayName = null;
             if (usersData[props.userId]) {
                 photo = usersData[props.userId].personalData.pfpUrl;
                 displayName = usersData[props.userId].personalData.displayName;
@@ -66,6 +66,9 @@ export function AvatarStackItem(props) {
                 const userManager = DBManager.getUserManager(props.userId);
                 photo = await userManager.getPfpUrl();
                 displayName = await userManager.getDisplayName();
+                const newData = { ...usersData };
+                newData[props.userId] = userManager.data;
+                setUsersData(newData);
             }
             setPfpUrl(photo);
             setName(displayName);
