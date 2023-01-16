@@ -119,6 +119,7 @@ export function AvatarIcon(props) {
 
         fetchUserData();
         
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.id, props.src, props.displayName]);
 
     // If we've declared a size, return one with sx attr
@@ -160,6 +161,7 @@ export function AvatarToggle(props) {
 export function AvatarCard(props) {
 
     const [displayName, setDisplayName] = useState(props.displayName ? props.displayName : "");
+    const { usersData, setUsersData } = useContext(UsersContext);
 
     useEffect(() => {
 
@@ -167,8 +169,16 @@ export function AvatarCard(props) {
             if (displayName.length > 0) {
                 return
             }
-            const userManager = DBManager.getUserManager(props.id);
-            const name = await userManager.getDisplayName();
+            let name = null;
+            if (usersData[props.id]) {
+                name = usersData[props.id].personalData.displayName;
+            } else {
+                const userManager = DBManager.getUserManager(props.id);
+                name = await userManager.getDisplayName();
+                const newData = { ...usersData };
+                newData[props.id] = userManager.data;
+                setUsersData(newData);
+            }
             setDisplayName(name);
         }
 
