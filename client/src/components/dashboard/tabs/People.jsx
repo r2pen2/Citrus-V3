@@ -1,6 +1,6 @@
+
 // Library imports
 import { useState, useEffect } from "react"
-
 
 // Component imports
 import { Breadcrumbs } from "../../resources/Navigation";

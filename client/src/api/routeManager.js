@@ -36,7 +36,7 @@ export class RouteManager {
      * @param {string} title document title
      */
     static setTitleOrRedirectToLogin(title) {
-        const user = SessionManager.getUser();
+        const user = SessionManager.getCurrentUser();
         if (!user) {
             RouteManager.redirect("/login");
         } else {
@@ -49,7 +49,7 @@ export class RouteManager {
      * @param {string} title document title
      */
     static setTitleOrRedirectToDashboard(title) {
-        const user = SessionManager.getUser();
+        const user = SessionManager.getCurrentUser();
         if (user) {
             RouteManager.redirect("/dashboard");
         } else {

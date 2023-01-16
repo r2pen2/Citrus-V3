@@ -17,15 +17,20 @@ export class SessionManager {
      * Get user object saved in localStorage
      * @returns user object or null
      */
-    static getUser() {
-        return JSON.parse(localStorage.getItem("citrus:user"));
+    static getCurrentUser() {
+        return JSON.parse(localStorage.getItem("citrus:currentUser"));
     }
 
     /**
      * Set user object saved in localStorage
      */
-    static setUser(user) {
-        localStorage.setItem("citrus:user", JSON.stringify(user));
+    static setCurrentUser(user) {
+        localStorage.setItem("citrus:currentUser", JSON.stringify(user));
+    }
+
+    static setCurrentUserManager(manager) {
+        const string = JSON.stringify(manager.data);
+        localStorage.setItem("citrus:currentUserManager", string);
     }
 
     /**
@@ -34,6 +39,9 @@ export class SessionManager {
      */
     static getCurrentUserManager() {
         const id = this.getUserId(); // Get user ID from LS
+        if (localStorage.getItem("citrus:currentUserManager")) {
+            return DBManager.createUserManagerFromLocalStorage(id, JSON.parse(localStorage.getItem("citrus:currentUserManager")));
+        }
         if (id) {
             return DBManager.getUserManager(id);
         }
@@ -46,7 +54,7 @@ export class SessionManager {
      * @returns user id or null
      */
     static getUserId() {
-        const user = JSON.parse(localStorage.getItem("citrus:user"));
+        const user = JSON.parse(localStorage.getItem("citrus:currentUser"));
         return user ? user.uid : null;
     }
 
@@ -55,14 +63,7 @@ export class SessionManager {
      * @returns profile picture URL or empty string
      */
     static getPfpUrl() {
-        return localStorage.getItem("citrus:pfpUrl") ? localStorage.getItem("citrus:pfpUrl") : "";
-    }
-
-    /**
-     * Set profile picture URL saved in localStorage
-     */
-    static setPfpUrl(pfpUrl) {
-        localStorage.setItem("citrus:pfpUrl", pfpUrl);
+        return localStorage.getItem("citrus:currentUser") ? JSON.parse(localStorage.getItem("citrus:currentUser")).photoURL : "";
     }
 
     /**
@@ -70,14 +71,7 @@ export class SessionManager {
      * @returns display name or empty string
      */
     static getDisplayName() {
-        return localStorage.getItem("citrus:displayName") ? localStorage.getItem("citrus:displayName") : "";
-    }
-
-    /**
-     * Set display name saved in localStorage
-     */
-    static setDisplayName(displayName) {
-        localStorage.setItem("citrus:displayName", displayName);
+        return localStorage.getItem("citrus:currentUser") ? JSON.parse(localStorage.getItem("citrus:currentUser")).displayName : "";
     }
 
     /**
@@ -115,17 +109,15 @@ export class SessionManager {
      * @returns whether or not there is a user stored in LS
      */
     static userInLS() {
-        return localStorage.getItem("citrus:user") ? true : false;
+        return localStorage.getItem("citrus:currentUser") ? true : false;
     }
-
-
 
     /**
      * Checks whether a user is completely signed in based on whether or not they have a display name
      * @returns whether or not the user has completed signin process
      */
     static userFullySignedIn() {
-        const user = SessionManager.getUser();
+        const user = SessionManager.getCurrentUser();
         if (user) {
             if (user.displayName === null) {
               return false;
@@ -141,10 +133,12 @@ export class SessionManager {
      * Clear all citrus related localstorage keys
      */
     static clearLS() {
-        localStorage.removeItem("citrus:user");
+        localStorage.removeItem("citrus:currentUser");
         localStorage.removeItem("citrus:debug");
         localStorage.removeItem("citrus:pfpUrl");
         localStorage.removeItem("citrus:displayName");
+        localStorage.removeItem("citrus:userData");
+        localStorage.removeItem("citrus:currentUserManager");
     }
 
     /**
@@ -159,6 +153,8 @@ export class SessionManager {
             displayName: this.getDisplayName(),
             debugMode: this.getDebugMode(),
             userId: this.getUserId(),
+            userData: this.getUserData(),
+            currentUserManager: this.getCurrentUserManager(),
         }
     }
 
@@ -169,5 +165,40 @@ export class SessionManager {
         signOutUser().then(() => {
             RouteManager.redirect("/home");
         });
+    }
+
+    static getUserData() {
+        return localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+    }
+
+    static getUserAttribute(u, attr) {
+        const map = localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+        const user = map[u] ? map[u] : {};
+        return user[attr] ? user[attr] : null;
+    }
+    
+    static setUserAttribute(u, attr, val) {
+        const map = localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+        const user = map[u] ? map[u] : {};
+        user[attr] = val; 
+        map[u] = user;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:userData", string);
+    }
+
+    static setUserPfpUrl(uid, url) {
+        this.setUserAttribute(uid, "pfpUrl", url);
+    }
+
+    static getUserPfpUrl(uid) {
+        return this.getUserAttribute(uid, "pfpUrl");
+    }
+    
+    static setUserDisplayName(uid, name) {
+        this.setUserAttribute(uid, "displayName", name);
+    }
+    
+    static getUserDisplayName(uid) {
+        return this.getUserAttribute(uid, "displayName");
     }
 }

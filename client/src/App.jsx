@@ -10,19 +10,20 @@ import "./assets/style/colors.css";
 import { ThemeProvider } from "@mui/material";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { NotificationContainer } from 'react-notifications';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Component Imports
 import Login from "./components/login/Login";
 import Dashboard from "./components/dashboard/Dashboard";
 import Topbar from "./components/topbar/Topbar";
 import HomePage from "./components/homePage/HomePage";
-import UserPage from "./components/userPage/UserPage";
 import InviteHandler from "./components/inviteHandler/InviteHandler";
 
 // API imports
 import { SessionManager } from "./api/sessionManager";
 import { auth } from "./api/firebase";
+
+export const UserContext = React.createContext();
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -35,9 +36,7 @@ function App() {
     auth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
         // Set session details
-        SessionManager.setUser(authUser);
-        SessionManager.setPfpUrl(authUser.photoURL);
-        SessionManager.setDisplayName(authUser.displayName);
+        SessionManager.setCurrentUser(authUser);
 
         // Sync user's DB doc
         const userAlreadyExists = await currentUserManager.documentExists();
@@ -59,13 +58,12 @@ function App() {
     <div className="app" data-testid="app-wrapper">
       <Router>
         <ThemeProvider theme={theme}>
-          <Topbar/>
+            <Topbar/>
             <Routes>
               <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
               <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
               <Route path="/login/*" element={<Login/>} />
               <Route path="/dashboard/*" element={<Dashboard/>} />
-              <Route path="/user/*" element={<UserPage/>}/>
               <Route path="/invite" element={<InviteHandler />} />
             </Routes>
         </ThemeProvider>

@@ -203,6 +203,9 @@ export class ObjectManager {
                 const docSnap = await getDoc(this.docRef);
                 if (docSnap.exists()) {
                     this.data = docSnap.data();
+                    if (this.documentId === SessionManager.getUserId()) {
+                        SessionManager.setCurrentUser(this);
+                    }
                     resolve(docSnap.data());
                 } else {
                     this.debugger.logWithPrefix("Document snapshot didn't exist! Setting empty data...");

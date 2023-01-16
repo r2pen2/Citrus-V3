@@ -252,8 +252,12 @@ export class UserManager extends ObjectManager {
     }
 
     async getDisplayName() {
+        if (SessionManager.getUserDisplayName(this.documentId)) {
+            return SessionManager.getUserDisplayName(this.documentId);
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.DISPLAYNAME).then((val) => {
+                SessionManager.setUserDisplayName(this.documentId, val);
                 resolve(val);
             })
         })
@@ -276,14 +280,23 @@ export class UserManager extends ObjectManager {
     }
 
     async getPfpUrl() {
+        if (SessionManager.getUserPfpUrl(this.documentId)) {
+            return SessionManager.getUserPfpUrl(this.documentId);
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.PFPURL).then((val) => {
+                SessionManager.setUserPfpUrl(this.documentId, val);
                 resolve(val);
             })
         })
     }
 
     async getRelations() {
+        if (this.documentId === SessionManager.getUserId()) {
+            if (SessionManager.getCurrentUserManager().fetched) {
+                return SessionManager.getCurrentUserManager().data.relations;
+            }
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.RELATIONS).then((val) => {
                 resolve(val);

@@ -22,7 +22,7 @@ export default function LoginHome() {
   async function handleSignIn() {
     signInWithGoogle().then(async (newUser) => {
         // Set session details
-        SessionManager.setUser(newUser);
+        SessionManager.setCurrentUser(newUser);
 
         // Create object manager for new user
         // We're not trying to get a UserManager from LocalStorage becuase we know that the user was signed out before this moment
