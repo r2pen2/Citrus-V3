@@ -220,6 +220,11 @@ export class UserManager extends ObjectManager {
     }
 
     async getGroups() {
+        if (this.documentId === SessionManager.getUserId()) {
+            if (SessionManager.getCurrentUserManager().fetched) {
+                return SessionManager.getCurrentUserManager().data.groups;
+            }
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.GROUPS).then((val) => {
                 resolve(val);

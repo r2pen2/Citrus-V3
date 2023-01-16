@@ -11,7 +11,7 @@ import { CircularProgress, Button } from "@mui/material";
 export default function UserGroups() {
   
   const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE);
-  const [groupManagers, setGroupManagers] = useState({managers: [], fetched: false});
+  const [groupManagers, setGroupManagers] = useState({managers: SessionManager.getCurrentUserGroups(), fetched: false});
 
   const currentUserManager = SessionManager.getCurrentUserManager();
   

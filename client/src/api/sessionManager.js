@@ -28,6 +28,11 @@ export class SessionManager {
         localStorage.setItem("citrus:currentUser", JSON.stringify(user));
     }
 
+    static getCurrentUserGrops() {
+        const man = this.getCurrentUserManager();
+        return man.data.groups;
+    }
+
     static setCurrentUserManager(manager) {
         const string = JSON.stringify(manager.data);
         localStorage.setItem("citrus:currentUserManager", string);
