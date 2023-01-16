@@ -23,7 +23,9 @@ import InviteHandler from "./components/inviteHandler/InviteHandler";
 import { SessionManager } from "./api/sessionManager";
 import { auth } from "./api/firebase";
 
-export const UserContext = React.createContext();
+export const UsersContext = React.createContext();
+export const GroupsContext = React.createContext();
+export const TransactionsContext = React.createContext();
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -53,19 +55,29 @@ function App() {
     })
   }, []);
 
+  const [usersData, setUsersData] = useState({});
+  const [transactionsData, setTransactionsData] = useState({});
+  const [groupsData, setGroupsData] = useState({});
+
   // I present to you: Citrus Financial
   return (
     <div className="app" data-testid="app-wrapper">
       <Router>
         <ThemeProvider theme={theme}>
-            <Topbar/>
-            <Routes>
-              <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
-              <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
-              <Route path="/login/*" element={<Login/>} />
-              <Route path="/dashboard/*" element={<Dashboard/>} />
-              <Route path="/invite" element={<InviteHandler />} />
-            </Routes>
+        <UsersContext.Provider value={usersData} >
+        <TransactionsContext.Provider value={transactionsData} >
+        <GroupsContext.Provider value={groupsData} >
+          <Topbar/>
+          <Routes>
+            <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
+            <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
+            <Route path="/login/*" element={<Login/>} />
+            <Route path="/dashboard/*" element={<Dashboard/>} />
+            <Route path="/invite" element={<InviteHandler />} />
+          </Routes>
+        </GroupsContext.Provider>
+        </TransactionsContext.Provider>
+        </UsersContext.Provider>
         </ThemeProvider>
         <NotificationContainer />
         <div id="recaptcha-container"></div>
