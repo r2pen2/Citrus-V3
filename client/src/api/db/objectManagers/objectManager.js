@@ -204,7 +204,7 @@ export class ObjectManager {
                 if (docSnap.exists()) {
                     this.data = docSnap.data();
                     if (this.documentId === SessionManager.getUserId()) {
-                        SessionManager.setCurrentUser(this);
+                        SessionManager.setCurrentUserManager(this);
                     }
                     resolve(docSnap.data());
                 } else {
