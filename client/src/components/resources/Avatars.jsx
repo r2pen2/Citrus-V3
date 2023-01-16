@@ -2,7 +2,7 @@
 import "./style/avatars.scss";
 
 // Library imports
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { AvatarGroup, Avatar, Tooltip, Typography } from "@mui/material";
 
 // API imports
@@ -11,6 +11,8 @@ import { OutlinedCard } from "./Surfaces";
 import { SessionManager } from "../../api/sessionManager";
 import { RouteManager } from "../../api/routeManager";
 import { sortAlphabetical } from "../../api/sorting";
+
+import { UsersContext } from "../../App";
 
 export function AvatarStack({ids, max, size}) {
 
@@ -87,18 +89,31 @@ export function AvatarIcon(props) {
     const [pfpUrl, setPfpUrl] = useState(props.src ? props.src : null);
     const [displayName, setDisplayName] = useState(props.displayName ? props.displayName : null);
 
+    const { usersData, setUsersData } = useContext(UsersContext);
+
     useEffect(() => {
 
-        const userManager = DBManager.getUserManager(props.id);
-
         async function fetchUserData() {
-            if (!props.src) {
-                let url = await userManager.getPfpUrl();
-                setPfpUrl(url);
-            }
-            if (!props.displayName) {
-                let name = await userManager.getDisplayName();
+            let url = null;
+            let name = null;
+            if (usersData[props.id]) {
+                if (!props.src) {
+                    url = usersData[props.id].personalData.pfpUrl;
+                    setPfpUrl(url);
+                }
+                if (!props.displayName) {
+                    name = usersData[props.id].personalData.displayName;
+                    setDisplayName(name);
+                }
+            } else {
+                const userManager = DBManager.getUserManager(props.id);
+                url =  await userManager.getPfpUrl();
+                name = await userManager.getDisplayName();
+                setPfpUrl(url)
                 setDisplayName(name);
+                const newData = { ...usersData };
+                newData[props.id] = userManager.data;
+                setUsersData(newData);
             }
         }
 

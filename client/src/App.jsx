@@ -64,9 +64,9 @@ function App() {
     <div className="app" data-testid="app-wrapper">
       <Router>
         <ThemeProvider theme={theme}>
-        <UsersContext.Provider value={usersData} >
-        <TransactionsContext.Provider value={transactionsData} >
-        <GroupsContext.Provider value={groupsData} >
+        <UsersContext.Provider value={{usersData, setUsersData}} >
+        <TransactionsContext.Provider value={{transactionsData, setTransactionsData}} >
+        <GroupsContext.Provider value={{groupsData, setGroupsData}} >
           <Topbar/>
           <Routes>
             <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />

@@ -57,10 +57,6 @@ export class GroupManager extends ObjectManager {
         return `${RouteManager.getHostName()}/invite?type=group&method=link&id=${this.documentId}`
     }
 
-    saveLocal(o) {
-        SessionManager.saveGroupData(o);
-    }
-
     async generateInvites() {
         return new Promise(async (resolve, reject) => {
             let newCode = false;
@@ -253,9 +249,6 @@ export class GroupManager extends ObjectManager {
 
     // ================= Get Operations ================= //
     async getCreatedAt() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).createdAt;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CREATEDAT).then((val) => {
                 resolve(val);
@@ -264,9 +257,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getCreatedBy() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).createdBy;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CREATEDBY).then((val) => {
                 resolve(val);
@@ -275,9 +265,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getName() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).name;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.NAME).then((val) => {
                 resolve(val);
@@ -286,9 +273,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getDescription() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).description;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.DESCRIPTION).then((val) => {
                 resolve(val);
@@ -297,9 +281,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getTransactions() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).transactions;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.TRANSACTIONS).then((val) => {
                 resolve(val);
@@ -308,9 +289,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getUsers() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).users;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.USERS).then((val) => {
                 resolve(val);
@@ -319,9 +297,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getLinkInvite() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).invitations.link;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.LINKINVITE).then((val) => {
                 resolve(val);
@@ -330,9 +305,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getQrInvite() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).invitations.qr;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.QRINVITE).then((val) => {
                 resolve(val);
@@ -341,9 +313,6 @@ export class GroupManager extends ObjectManager {
     }
 
     async getCodeInvite() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).invitations.code;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CODEINVITE).then((val) => {
                 resolve(val);
@@ -352,9 +321,6 @@ export class GroupManager extends ObjectManager {
     }
     
     async getBalances() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).balances;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.BALANCES).then((val) => {
                 resolve(val);
@@ -363,9 +329,6 @@ export class GroupManager extends ObjectManager {
     }
     
     async getUserBalance(userId) {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).balances[userId] ? SessionManager.getSavedGroup(this.documentId).balances[userId] : {};
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.BALANCES).then((val) => {
                 resolve(val[userId] ? val[userId] : {});
@@ -378,9 +341,6 @@ export class GroupManager extends ObjectManager {
      * @returns {number} number of users in the group
      */
     async getMemberCount() {
-        if (SessionManager.getSavedGroup(this.documentId)) {
-            return SessionManager.getSavedGroup(this.documentId).users.length;
-        }
         return new Promise(async (resolve, reject) => {
             const groupMembers = await this.getUsers();
             resolve(groupMembers.length);

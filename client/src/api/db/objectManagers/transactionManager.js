@@ -43,10 +43,6 @@ export class TransactionManager extends ObjectManager {
         return empty;
     }
 
-    saveLocal(o) {
-        SessionManager.saveTransactionData(o);
-    }
-
     handleAdd(change, data) {
         switch(change.field) {
             case this.fields.CURRENCYLEGAL:

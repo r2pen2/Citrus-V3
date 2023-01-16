@@ -50,10 +50,6 @@ export class UserManager extends ObjectManager {
         return empty;
     }
 
-    saveLocal(o) {
-        SessionManager.saveUserData(o);
-    }
-    
     handleUpdate(change, data) {
         switch(change.field) {
             case this.fields.RELATIONS:
@@ -216,9 +212,6 @@ export class UserManager extends ObjectManager {
     // ================= Get Operations ================= //
 
     async getFriends() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).friends;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.FRIENDS).then((val) => {
                 resolve(val);
@@ -227,9 +220,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getGroups() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).groups;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.GROUPS).then((val) => {
                 resolve(val);
@@ -238,9 +228,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getCreatedAt() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).metadata.createdAt;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CREATEDAT).then((val) => {
                 resolve(val);
@@ -249,9 +236,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getEmailVerified() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).metadata.emailVerified;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.EMAILVERIFIED).then((val) => {
                 resolve(val);
@@ -260,9 +244,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getLastLoginAt() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).metadata.lastLoginAt;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.LASTLOGINAT).then((val) => {
                 resolve(val);
@@ -271,9 +252,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getDisplayName() {
-        if (SessionManager.getSavedUser(this.documentId)) {
-            return SessionManager.getSavedUser(this.documentId).personalData.displayName;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.DISPLAYNAME).then((val) => {
                 resolve(val);
@@ -282,9 +260,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getEmail() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).personalData.email;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.EMAIL).then((val) => {
                 resolve(val);
@@ -293,9 +268,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getPhoneNumber() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).personalData.phoneNumber;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.PHONENUMBER).then((val) => {
                 resolve(val);
@@ -304,9 +276,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getPfpUrl() {
-        if (SessionManager.getSavedUser(this.documentId)) {
-            return SessionManager.getSavedUser(this.documentId).personalData.pfpUrl;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.PFPURL).then((val) => {
                 resolve(val);
@@ -315,9 +284,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelations() {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            return SessionManager.getSavedUser(this.documentId).relations;
-        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.RELATIONS).then((val) => {
                 resolve(val);
@@ -326,11 +292,6 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelationWithUser(userId) {
-        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
-            if (SessionManager.getSavedUser(this.documentId).relations[userId]) {
-                return new UserRelation(SessionManager.getSavedUser(this.documentId).relations[userId]);
-            }
-        }
         await this.fetchData();
         return new Promise(async (resolve, reject) => {
             const allRelations = await this.getRelations();
