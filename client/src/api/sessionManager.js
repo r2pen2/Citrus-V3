@@ -188,10 +188,21 @@ export class SessionManager {
     }
 
     static saveUserData(userManager) {
+        // We have to be a little more careful about what kind of user data we're saving to LS becuase users can see everything if they dig :(
         const userId = userManager.documentId;
         const userData = userManager.data;
         const map = this.getUserData();
-        map[userId] = userData;
+        if (userId === this.getUserId()) {
+            map[userId] = userData;
+        } else {
+            // This isn't current user, so we should remove some (most) information
+            map[userId] = {
+                personalData: {
+                    displayName: userData.displayName,
+                    pfpUrl: userData.pfpUrl,
+                }
+            }
+        }
         const string = JSON.stringify(map);
         localStorage.setItem("citrus:userData", string);
     }

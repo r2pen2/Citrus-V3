@@ -216,7 +216,7 @@ export class UserManager extends ObjectManager {
     // ================= Get Operations ================= //
 
     async getFriends() {
-        if (SessionManager.getSavedUser(this.documentId)) {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
             return SessionManager.getSavedUser(this.documentId).friends;
         }
         return new Promise(async (resolve, reject) => {
@@ -227,7 +227,7 @@ export class UserManager extends ObjectManager {
     }
 
     async getGroups() {
-        if (SessionManager.getSavedUser(this.documentId)) {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
             return SessionManager.getSavedUser(this.documentId).groups;
         }
         return new Promise(async (resolve, reject) => {
@@ -238,6 +238,9 @@ export class UserManager extends ObjectManager {
     }
 
     async getCreatedAt() {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
+            return SessionManager.getSavedUser(this.documentId).metadata.createdAt;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CREATEDAT).then((val) => {
                 resolve(val);
@@ -246,6 +249,9 @@ export class UserManager extends ObjectManager {
     }
 
     async getEmailVerified() {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
+            return SessionManager.getSavedUser(this.documentId).metadata.emailVerified;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.EMAILVERIFIED).then((val) => {
                 resolve(val);
@@ -254,6 +260,9 @@ export class UserManager extends ObjectManager {
     }
 
     async getLastLoginAt() {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
+            return SessionManager.getSavedUser(this.documentId).metadata.lastLoginAt;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.LASTLOGINAT).then((val) => {
                 resolve(val);
@@ -273,6 +282,9 @@ export class UserManager extends ObjectManager {
     }
 
     async getEmail() {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
+            return SessionManager.getSavedUser(this.documentId).personalData.email;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.EMAIL).then((val) => {
                 resolve(val);
@@ -281,6 +293,9 @@ export class UserManager extends ObjectManager {
     }
 
     async getPhoneNumber() {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
+            return SessionManager.getSavedUser(this.documentId).personalData.phoneNumber;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.PHONENUMBER).then((val) => {
                 resolve(val);
@@ -300,7 +315,7 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelations() {
-        if (SessionManager.getSavedUser(this.documentId)) {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
             return SessionManager.getSavedUser(this.documentId).relations;
         }
         return new Promise(async (resolve, reject) => {
@@ -311,7 +326,7 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelationWithUser(userId) {
-        if (SessionManager.getSavedUser(this.documentId)) {
+        if (SessionManager.getSavedUser(this.documentId) && SessionManager.getUserId() === this.documentId) {
             if (SessionManager.getSavedUser(this.documentId).relations[userId]) {
                 return new UserRelation(SessionManager.getSavedUser(this.documentId).relations[userId]);
             }
