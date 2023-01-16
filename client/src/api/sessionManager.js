@@ -33,6 +33,11 @@ export class SessionManager {
         return man.data.groups;
     }
 
+    static getCurrentUserFriends() {
+        const man = this.getCurrentUserManager();
+        return man.data.friends;
+    }
+
     static setCurrentUserManager(manager) {
         const string = JSON.stringify(manager.data);
         localStorage.setItem("citrus:currentUserManager", string);
@@ -143,6 +148,8 @@ export class SessionManager {
         localStorage.removeItem("citrus:pfpUrl");
         localStorage.removeItem("citrus:displayName");
         localStorage.removeItem("citrus:userData");
+        localStorage.removeItem("citrus:groupsData"); 
+        localStorage.removeItem("citrus:transactionsData"); 
         localStorage.removeItem("citrus:currentUserManager");
     }
 
@@ -159,6 +166,8 @@ export class SessionManager {
             debugMode: this.getDebugMode(),
             userId: this.getUserId(),
             userData: this.getUserData(),
+            transactionsData: this.getTransactionsData(),
+            groupsData: this.getGroupsData(),
             currentUserManager: this.getCurrentUserManager(),
         }
     }
@@ -171,19 +180,57 @@ export class SessionManager {
             RouteManager.redirect("/home");
         });
     }
+    
+    static getTransactionsData() {
+        return localStorage.getItem("citrus:transactionsData") ? JSON.parse(localStorage.getItem("citrus:transactionsData")) : {};
+    }
+    
+    static getGroupsData() {
+        return localStorage.getItem("citrus:groupsData") ? JSON.parse(localStorage.getItem("citrus:groupsData")) : {};
+    }
 
     static getUserData() {
         return localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
     }
 
+    static getGroupAttribute(g, attr) {
+        const map = this.getGroupsData();
+        const group = map[g] ? map[g] : {};
+        return group[attr] ? group[attr] : null;
+    }
+
+    static getTransactionAttribute(t, attr) {
+        const map = this.getTransactionsData();
+        const transaction = map[t] ? map[t] : {};
+        return transaction[attr] ? transaction[attr] : null;
+    }
+
     static getUserAttribute(u, attr) {
-        const map = localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+        const map = this.getUserData();
         const user = map[u] ? map[u] : {};
         return user[attr] ? user[attr] : null;
     }
     
+    static setGroupAttribute(g, attr, val) {
+        const map = this.getGroupsData();
+        const group = map[g] ? map[g] : {};
+        group[attr] = val; 
+        map[g] = group;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:groupsData", string);
+    }
+    
+    static setTransactionAttribute(t, attr, val) {
+        const map = this.getTransactionsData();
+        const transaction = map[t] ? map[t] : {};
+        transaction[attr] = val; 
+        map[t] = transaction;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:transcationsData", string);
+    }
+    
     static setUserAttribute(u, attr, val) {
-        const map = localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+        const map = this.getUserData();
         const user = map[u] ? map[u] : {};
         user[attr] = val; 
         map[u] = user;
@@ -205,5 +252,33 @@ export class SessionManager {
     
     static getUserDisplayName(uid) {
         return this.getUserAttribute(uid, "displayName");
+    }
+
+    static saveGroupData(groupManager) {
+        const groupId = groupManager.documentId;
+        const groupData = groupManager.data;
+        const map = this.getGroupsData();
+        map[groupId] = groupData;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:groupsData", string); 
+    }
+
+    static getGroupData(groupId) {
+        const map = this.getGroupsData();
+        return map[groupId] ? map[groupId] : null;
+    }
+
+    static saveTransactionData(transactionManager) {
+        const transactionId = transactionManager.documentId;
+        const transactionData = transactionManager.data;
+        const map = this.getTransactionsData();
+        map[transactionId] = transactionData;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:transactionsData", string); 
+    }
+
+    static getTransactionData(transactionId) {
+        const map = this.getTransactionsData();
+        return map[transactionId] ? map[transactionId] : null;
     }
 }

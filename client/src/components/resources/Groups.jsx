@@ -139,7 +139,7 @@ function GroupCard({group}) {
 } 
 
 export function GroupCardSkeleton() {
-  return <Skeleton variant="rounded" height={100} />
+  return <Skeleton variant="rounded" height={100} className="skeleton-round" />
 }
 
 export function GroupInvite() {

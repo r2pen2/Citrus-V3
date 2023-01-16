@@ -1,6 +1,6 @@
 // Library imports
 import { useState, useEffect } from 'react';
-import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea, Switch } from '@mui/material';
+import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea, Switch, Skeleton } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -62,7 +62,9 @@ export default function NewTransaction(props) {
 function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     
     const [userData, setUserData] = useState({
-        recents: [],
+        fetched: false,
+        friendIds: SessionManager.getCurrentUserFriends(),
+        groupIds: SessionManager.getCurrentUserGroups(),
         groups: [],
         friends: []
     });
@@ -90,7 +92,9 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 newGroups.push({id: groupId, name: groupName, memberCount: groupMemberCount, members: groupMembers});
             }
             setUserData({
-                recents: userData.recents,
+                fetched: true,
+                friendIds: userData.friendIds,
+                groupIds: userData.groupIds,
                 groups: newGroups,
                 friends: newFriends,
             })
@@ -99,10 +103,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
         fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    function renderRecents() {
-        return <div></div>
-    }
 
     function handleGroupCheckbox(e, id) {
         e.preventDefault();
@@ -116,6 +116,11 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function renderGroups() {
+        if (!userData.fetched) {
+            return userData.groupIds.map(group => {
+                return <Skeleton key={group} variant="rounded" height={70} className="skeleton-round mb-2" />
+            })
+        }
         return userData.groups.map(group => {
             return (
                 <OutlinedCard key={"group-" + group.id} backgroundColor={(!checkedGroup || checkedGroup === group.id) ? (checkedGroup === group.id ? "#BFD67955" : "white") : "lightgray"}>
@@ -156,6 +161,11 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
     
     function renderFriends() {
+        if (!userData.fetched) {
+            return userData.friendIds.map(friend => {
+                return <Skeleton key={friend} variant="rounded" height={70} className="skeleton-round mb-2" />
+            })
+        }
         return userData.friends.map(friend => {
             return (
                 <OutlinedCard key={"friend-" + friend.id} backgroundColor={(!checkedGroup) ? (checkedFriends.includes(friend.id) && !checkedGroup ? "#BFD67955" : "white") : "lightgray"}>
@@ -212,8 +222,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="vh-60 w-100">
-                <SectionTitle title="Recent"/>
-                { renderRecents() }
                 <SectionTitle title="Groups"/>
                 { renderGroups() }
                 <SectionTitle title="Friends"/>
