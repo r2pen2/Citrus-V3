@@ -52,13 +52,22 @@ export function AvatarStackItem(props) {
     const [pfpUrl, setPfpUrl] = useState(null);
     const [name, setName] = useState(null);
 
+    const { usersData, setUsersData } = useContext(UsersContext);
+
     useEffect(() => {
 
         async function fetchUserData() {
-            const userManager = DBManager.getUserManager(props.userId);
-            let photo = await userManager.getPfpUrl();
+            let photo = null;
+            let displayName = null;
+            if (usersData[props.userId]) {
+                photo = usersData[props.userId].personalData.pfpUrl;
+                displayName = usersData[props.userId].personalData.displayName;
+            } else {
+                const userManager = DBManager.getUserManager(props.userId);
+                photo = await userManager.getPfpUrl();
+                displayName = await userManager.getDisplayName();
+            }
             setPfpUrl(photo);
-            let displayName = await userManager.getDisplayName();
             setName(displayName);
         }
 

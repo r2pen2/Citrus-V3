@@ -20,6 +20,8 @@ import { DBManager } from "../../../api/db/dbManager";
 import { UserRelationHistory } from "../../../api/db/objectManagers/userManager";
 import { AvatarIcon, AvatarStack } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
+import { useContext } from 'react';
+import { UsersContext, GroupsContext } from '../../../App';
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -60,11 +62,14 @@ export default function NewTransaction(props) {
 }
 
 function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
+
+    const { usersData, setUsersData } = useContext(UsersContext);
+    const { groupsData, setGroupsData } = useContext(GroupsContext);
     
     const [userData, setUserData] = useState({
         fetched: false,
-        friendIds: SessionManager.getCurrentUserManager().data.friends,
-        groupIds: SessionManager.getCurrentUserManager().data.groups,
+        friendIds: usersData[SessionManager.getUserId()] ? usersData[SessionManager.getUserId()].friends : [],
+        groupIds: usersData[SessionManager.getUserId()] ? usersData[SessionManager.getUserId()].groups : [],
         groups: [],
         friends: []
     });
@@ -74,22 +79,49 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     useEffect(() => {
         async function fetchUserData() {
-            let friendIds = await currentUserManager.getFriends();
-            let groupIds = await currentUserManager.getGroups();
+            let friendIds, groupIds = null;
+            if (usersData[SessionManager.getUserId()]) {
+                friendIds = usersData[SessionManager.getUserId()].friends;
+                groupIds = usersData[SessionManager.getUserId()].groups;
+            } else {
+                friendIds = await currentUserManager.getFriends();
+                groupIds = await currentUserManager.getGroups();
+                const newData = { ...usersData };
+                newData[SessionManager.getUserId()] = currentUserManager.data;
+                setUserData(newData);
+            }
             let newFriends = [];
             for (const friendId of friendIds) {
-                const friendUserManager = DBManager.getUserManager(friendId);
-                let friendName = await friendUserManager.getDisplayName();
-                console.log(friendName);
-                let friendPhoto = await friendUserManager.getPfpUrl();
+                let friendName, friendPhoto = null;
+                if (usersData[friendId]) {
+                    friendName = usersData[friendId].personalData.displayName;
+                    friendPhoto = usersData[friendId].personalData.pfpUrl;
+                } else {
+                    const friendUserManager = DBManager.getUserManager(friendId);
+                    friendName = await friendUserManager.getDisplayName();
+                    friendPhoto = await friendUserManager.getPfpUrl();
+                    const newData = { ...usersData };
+                    newData[friendId] = friendUserManager.data;
+                    setUserData(newData);
+                }
                 newFriends.push({id: friendId, displayName: friendName, pfpUrl: friendPhoto, checked: false});
             }
             let newGroups = [];
             for (const groupId of groupIds) {
-                const groupUserManager = DBManager.getGroupManager(groupId);
-                let groupName = await groupUserManager.getName();
-                let groupMemberCount = await groupUserManager.getMemberCount();
-                let groupMembers = await groupUserManager.getUsers();
+                let groupName, groupMemberCount, groupMembers = null;
+                if (groupsData[groupId]) {
+                    groupName = groupsData[groupId].name;
+                    groupMemberCount = groupsData[groupId].users.length;
+                    groupMembers = groupsData[groupId].users;
+                } else {
+                    const groupUserManager = DBManager.getGroupManager(groupId);
+                    groupName = await groupUserManager.getName();
+                    groupMemberCount = await groupUserManager.getMemberCount();
+                    groupMembers = await groupUserManager.getUsers();
+                    const newData = { ...groupsData };
+                    newData[groupId] = groupUserManager.data;
+                    setGroupsData(newData);
+                }
                 newGroups.push({id: groupId, name: groupName, memberCount: groupMemberCount, members: groupMembers});
             }
             setUserData({
