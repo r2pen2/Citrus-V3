@@ -63,8 +63,8 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     
     const [userData, setUserData] = useState({
         fetched: false,
-        friendIds: SessionManager.getCurrentUserFriends(),
-        groupIds: SessionManager.getCurrentUserGroups(),
+        friendIds: SessionManager.getCurrentUserManager().data.friends,
+        groupIds: SessionManager.getCurrentUserManager().data.groups,
         groups: [],
         friends: []
     });
@@ -117,6 +117,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function renderGroups() {
         if (!userData.fetched) {
+            console.log(SessionManager.getCurrentUserManager())
             return userData.groupIds.map(group => {
                 return <Skeleton key={group} variant="rounded" height={70} className="skeleton-round mb-2" />
             })
@@ -423,10 +424,12 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             }
         }
 
-        let success = true;
         for (const key of Object.entries(userManagers)) {
-            const pushed = await key[1].push();
-            success = (success && pushed);
+            if (key[0] === SessionManager.getUserId()) {
+                await key[1].push();
+            } else {
+                key[1].push();
+            }
         }
 
         const currencyKey = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
@@ -440,8 +443,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
                 groupManager.updateBalance(user.id, userBal);
             }
-            const pushed = await groupManager.push();
-            success = (success && pushed);
+            groupManager.push();
         }
 
         if (isIOU) {
@@ -454,15 +456,11 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 groupManager.updateBalance(paidByCheckedUsers[0], fromBal);
                 groupManager.updateBalance(splitCheckedUsers[0], toBal);
                 groupManager.addTransaction(transactionManager.documentId);
-                const pushed = await groupManager.push();
-                success = (success && pushed);
+                groupManager.push();
             }
         }
 
-        if (success) {
-           RouteManager.redirectToTransaction(transactionManager.documentId);
-        }
-        
+        RouteManager.redirectToTransaction(transactionManager.documentId);
     }
 
     function populateCurrencyTypeSelect() {

@@ -11,7 +11,6 @@ import { GroupCardSkeleton } from "../../resources/Groups"
 
 export default function UserGroups() {
   
-  const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE);
   const [groupState, setGroupState] = useState({ids: SessionManager.getCurrentUserGroups(), managers: [], fetched: false});
 
   const currentUserManager = SessionManager.getCurrentUserManager();
@@ -20,8 +19,12 @@ export default function UserGroups() {
     async function fetchRelations() {
         let newGroupManagers = [];
         for (const groupId of groupState.ids) {
-          const groupManager = DBManager.getGroupManager(groupId);
-          await groupManager.fetchData();
+          let groupManager = DBManager.getGroupManager(groupId);
+          if (SessionManager.getSavedGroup(groupId)) {
+            groupManager = DBManager.createGroupManagerFromLocalStorage(groupId, SessionManager.getSavedGroup(groupId));
+          } else {
+            await groupManager.fetchData();
+          }
           newGroupManagers.push(groupManager);
         }
         setGroupState({ids: groupState.ids, managers: newGroupManagers, fetched: true});

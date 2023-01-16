@@ -203,9 +203,7 @@ export class ObjectManager {
                 const docSnap = await getDoc(this.docRef);
                 if (docSnap.exists()) {
                     this.data = docSnap.data();
-                    if (this.documentId === SessionManager.getUserId()) {
-                        SessionManager.setCurrentUserManager(this);
-                    }
+                    this.saveLocal(this);
                     resolve(docSnap.data());
                 } else {
                     this.debugger.logWithPrefix("Document snapshot didn't exist! Setting empty data...");
@@ -292,6 +290,7 @@ export class ObjectManager {
                         this.docRef = newDoc;
                         this.debugger.logWithPrefix('Created new object of type" ' + this.objectType + '" with id "' + this.documentId + '"');
                     }
+                    this.saveLocal(this);
                     resolve(this.docRef);
                 } else {
                     this.debugger.logWithPrefix("No changes were made to: " + this.toString());

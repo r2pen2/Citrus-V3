@@ -38,6 +38,10 @@ export class InvitationManager extends ObjectManager {
         return empty;
     }
 
+    saveLocal(o) {
+        //
+    }
+
     handleAdd(change, data) {
         switch (change.field) {
             case this.fields.TARGETTYPE:

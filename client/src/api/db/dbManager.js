@@ -145,4 +145,10 @@ export class DBManager {
     static createUserManagerFromLocalStorage(id, data) {
         return new UserManager(id, data);
     }
+    static createGroupManagerFromLocalStorage(id, data) {
+        return new GroupManager(id, data);
+    }
+    static createTransactionManagerFromLocalStorage(id, data) {
+        return new TransactionManager(id, data);
+    }
 }

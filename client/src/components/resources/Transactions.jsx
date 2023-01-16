@@ -2,7 +2,7 @@
 import "./style/transactions.scss";
 
 // Library imports
-import { Tooltip, Button } from '@mui/material';
+import { Tooltip, Button, Skeleton } from '@mui/material';
 import { useState, useEffect} from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
@@ -23,14 +23,14 @@ export function TransactionDetail() {
   const transactionId = params.get("id");
 
   const [transactionData, setTransactionData] = useState({
-    currency: {legal: true, type: "USD"},
-    amount: null,
-    date: null,
-    title: "",
-    balances: {},
-    createdBy: null,
-    group: null,
-    isIOU: null,
+    currency: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).currency : {legal: true, type: "USD"},
+    amount: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).amount : 0,
+    date: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).date : null,
+    title: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).title : "",
+    balances: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).balances : {},
+    createdBy: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).createdBy : null,
+    group: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).group : null,
+    isIOU: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).isIOU : null,
   });
 
   function getCurrencyString(balance) {

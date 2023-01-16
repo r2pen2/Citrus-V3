@@ -44,7 +44,6 @@ export default function LoginHome() {
         }
         userManager.push().then(() => {
           // Save this UserManager to localstorage and redirect to dashboard
-          SessionManager.setCurrentUserManager(userManager);
           RouteManager.redirect("/dashboard");
         })
     });

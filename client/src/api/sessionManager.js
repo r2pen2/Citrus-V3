@@ -38,19 +38,15 @@ export class SessionManager {
         return man.data.friends;
     }
 
-    static setCurrentUserManager(manager) {
-        const string = JSON.stringify(manager.data);
-        localStorage.setItem("citrus:currentUserManager", string);
-    }
-
     /**
      * Get UserManager for current user
      * @returns UserManager for current user in LocalStorage
      */
     static getCurrentUserManager() {
         const id = this.getUserId(); // Get user ID from LS
-        if (localStorage.getItem("citrus:currentUserManager")) {
-            return DBManager.createUserManagerFromLocalStorage(id, JSON.parse(localStorage.getItem("citrus:currentUserManager")));
+        const savedUsers = this.getUserData();
+        if (Object.keys(savedUsers).includes(id)) {
+            return DBManager.createUserManagerFromLocalStorage(id, savedUsers[id]);
         }
         if (id) {
             return DBManager.getUserManager(id);
@@ -150,7 +146,6 @@ export class SessionManager {
         localStorage.removeItem("citrus:userData");
         localStorage.removeItem("citrus:groupsData"); 
         localStorage.removeItem("citrus:transactionsData"); 
-        localStorage.removeItem("citrus:currentUserManager");
     }
 
     /**
@@ -168,7 +163,6 @@ export class SessionManager {
             userData: this.getUserData(),
             transactionsData: this.getTransactionsData(),
             groupsData: this.getGroupsData(),
-            currentUserManager: this.getCurrentUserManager(),
         }
     }
 
@@ -193,65 +187,13 @@ export class SessionManager {
         return localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
     }
 
-    static getGroupAttribute(g, attr) {
-        const map = this.getGroupsData();
-        const group = map[g] ? map[g] : {};
-        return group[attr] ? group[attr] : null;
-    }
-
-    static getTransactionAttribute(t, attr) {
-        const map = this.getTransactionsData();
-        const transaction = map[t] ? map[t] : {};
-        return transaction[attr] ? transaction[attr] : null;
-    }
-
-    static getUserAttribute(u, attr) {
+    static saveUserData(userManager) {
+        const userId = userManager.documentId;
+        const userData = userManager.data;
         const map = this.getUserData();
-        const user = map[u] ? map[u] : {};
-        return user[attr] ? user[attr] : null;
-    }
-    
-    static setGroupAttribute(g, attr, val) {
-        const map = this.getGroupsData();
-        const group = map[g] ? map[g] : {};
-        group[attr] = val; 
-        map[g] = group;
-        const string = JSON.stringify(map);
-        localStorage.setItem("citrus:groupsData", string);
-    }
-    
-    static setTransactionAttribute(t, attr, val) {
-        const map = this.getTransactionsData();
-        const transaction = map[t] ? map[t] : {};
-        transaction[attr] = val; 
-        map[t] = transaction;
-        const string = JSON.stringify(map);
-        localStorage.setItem("citrus:transcationsData", string);
-    }
-    
-    static setUserAttribute(u, attr, val) {
-        const map = this.getUserData();
-        const user = map[u] ? map[u] : {};
-        user[attr] = val; 
-        map[u] = user;
+        map[userId] = userData;
         const string = JSON.stringify(map);
         localStorage.setItem("citrus:userData", string);
-    }
-
-    static setUserPfpUrl(uid, url) {
-        this.setUserAttribute(uid, "pfpUrl", url);
-    }
-
-    static getUserPfpUrl(uid) {
-        return this.getUserAttribute(uid, "pfpUrl");
-    }
-    
-    static setUserDisplayName(uid, name) {
-        this.setUserAttribute(uid, "displayName", name);
-    }
-    
-    static getUserDisplayName(uid) {
-        return this.getUserAttribute(uid, "displayName");
     }
 
     static saveGroupData(groupManager) {
@@ -280,5 +222,17 @@ export class SessionManager {
     static getTransactionData(transactionId) {
         const map = this.getTransactionsData();
         return map[transactionId] ? map[transactionId] : null;
+    }
+
+    static getSavedUser(id) {
+        return Object.keys(this.getUserData()).includes(id) ? this.getUserData()[id] : null;
+    }
+
+    static getSavedGroup(id) {
+        return Object.keys(this.getGroupsData()).includes(id) ? this.getGroupsData()[id] : null;
+    }
+
+    static getSavedTransaction(id) {
+        return Object.keys(this.getTransactionsData()).includes(id) ? this.getTransactionsData()[id] : null;
     }
 }

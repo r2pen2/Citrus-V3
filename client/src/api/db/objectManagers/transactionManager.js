@@ -7,8 +7,12 @@ import { UserRelation } from "./userManager";
  * Object Manager for transactions
  */
 export class TransactionManager extends ObjectManager {
-    constructor(_id) {
+    constructor(_id, _data) {
         super(DBManager.objectTypes.TRANSACTION, _id);
+        if (_data) {
+            this.data = _data;
+            this.fetched = true;
+        }
     }
 
     fields = {
@@ -37,6 +41,10 @@ export class TransactionManager extends ObjectManager {
             isIOU: null,     // {boolean} Whether or not this transaction was an IOU
         }
         return empty;
+    }
+
+    saveLocal(o) {
+        SessionManager.saveTransactionData(o);
     }
 
     handleAdd(change, data) {
@@ -187,6 +195,9 @@ export class TransactionManager extends ObjectManager {
     // ================= Get Operations ================= //
 
     async getCurrencyLegal() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).currency.legal;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CURRENCYLEGAL).then((val) => {
                 resolve(val);
@@ -195,6 +206,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getCurrencyType() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).currency.type;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CURRENCYTYPE).then((val) => {
                 resolve(val);
@@ -203,6 +217,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getCreatedBy() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).createdBy;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.CREATEDBY).then((val) => {
                 resolve(val);
@@ -211,6 +228,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getAmount() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).amount;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.AMOUNT).then((val) => {
                 resolve(val);
@@ -219,6 +239,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getDate() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).date;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.DATE).then((val) => {
                 resolve(val);
@@ -227,6 +250,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getTitle() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).title;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.TITLE).then((val) => {
                 resolve(val);
@@ -235,6 +261,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getGroup() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).group;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.GROUP).then((val) => {
                 resolve(val);
@@ -243,6 +272,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getBalances() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).balances;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.BALANCES).then((val) => {
                 resolve(val);
@@ -251,6 +283,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getSettleGroups() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).settleGroups;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.SETTLEGROUPS).then((val) => {
                 resolve(val);
@@ -259,6 +294,9 @@ export class TransactionManager extends ObjectManager {
     }
 
     async getIsIOU() {
+        if (SessionManager.getSavedTransaction(this.documentId)) {
+            return SessionManager.getSavedTransaction(this.documentId).isIOU;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.ISIOU).then((val) => {
                 resolve(val);

@@ -233,25 +233,33 @@ export function GroupDetail() {
   const groupId = params.get("id");
 
   const [groupData, setGroupData] = useState({
-    users: [],
-    name: "",
-    balances: {}
+    users: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).users : [],
+    name: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).name : "",
+    balances: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).balances : {},
   });
 
   const [search, setSearch] = useState("");
   
   const [groupTransactions, setGroupTransactions] = useState([]);
-
+  
   useEffect(() => {
     
     async function fetchGroupData() {
-      const groupManager = DBManager.getGroupManager(groupId);
-      await groupManager.fetchData();
+      let groupManager = DBManager.getGroupManager(groupId);
+      if (SessionManager.getSavedGroup(groupId)) {
+        groupManager = DBManager.createGroupManagerFromLocalStorage(groupId, SessionManager.getSavedGroup(groupId))
+      } else {
+        await groupManager.fetchData();
+      }
       setGroupData(groupManager.data);
       let newTransactionManagers = [];
       for (const transactionId of groupManager.data.transactions) {
-        const transactionManager = DBManager.getTransactionManager(transactionId);
-        await transactionManager.fetchData();
+        let transactionManager = DBManager.getTransactionManager(transactionId);
+        if (SessionManager.getSavedTransaction(transactionId)) {
+          transactionManager = DBManager.createTransactionManagerFromLocalStorage(transactionId, SessionManager.getSavedTransaction(transactionId))
+        } else {
+          await transactionManager.fetchData();
+        }
         newTransactionManagers.push(transactionManager);
       }
       setGroupTransactions(newTransactionManagers);

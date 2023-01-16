@@ -93,7 +93,6 @@ export default function NewUserForm() {
     currentUserManager.setDisplayName(firstName + " " + lastName);
     currentUserManager.push().then(() => {
       // Apply changes to UserManager in localstorage and redirect to dashboard
-      SessionManager.setCurrentUserManager(currentUserManager);
       RouteManager.redirect("/dashboard");
     })
   }

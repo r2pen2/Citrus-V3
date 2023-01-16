@@ -28,11 +28,17 @@ export function UserDetail() {
   const params = new URLSearchParams(window.location.search);
   const userId = params.get("id");
 
-  const [userRelation, setUserRelation] = useState(new UserRelation());
+  const [userRelation, setUserRelation] = useState(initRelation());
   const [settleOpen, setSettleOpen] = useState(false);
   const [settleCurrency, setSettleCurrency] = useState({legal: true, legalType: CurrencyManager.legalCurrencies.USD, emojiType: CurrencyManager.emojiCurrencies.BEER});
   const [settleAmount, setSettleAmount] = useState(0);
   const [search, setSearch] = useState("");
+
+  function initRelation() {
+    if (currentUserManager.data.relations[userId]) {
+      return new UserRelation(currentUserManager.data.relations[userId]);
+    }
+  }
 
   useEffect(() => {
 

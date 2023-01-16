@@ -50,6 +50,10 @@ export class UserManager extends ObjectManager {
         return empty;
     }
 
+    saveLocal(o) {
+        SessionManager.saveUserData(o);
+    }
+    
     handleUpdate(change, data) {
         switch(change.field) {
             case this.fields.RELATIONS:
@@ -212,6 +216,9 @@ export class UserManager extends ObjectManager {
     // ================= Get Operations ================= //
 
     async getFriends() {
+        if (SessionManager.getSavedUser(this.documentId)) {
+            return SessionManager.getSavedUser(this.documentId).friends;
+        }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.FRIENDS).then((val) => {
                 resolve(val);
@@ -220,10 +227,8 @@ export class UserManager extends ObjectManager {
     }
 
     async getGroups() {
-        if (this.documentId === SessionManager.getUserId()) {
-            if (SessionManager.getCurrentUserManager().fetched) {
-                return SessionManager.getCurrentUserManager().data.groups;
-            }
+        if (SessionManager.getSavedUser(this.documentId)) {
+            return SessionManager.getSavedUser(this.documentId).groups;
         }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.GROUPS).then((val) => {
@@ -257,12 +262,11 @@ export class UserManager extends ObjectManager {
     }
 
     async getDisplayName() {
-        if (SessionManager.getUserDisplayName(this.documentId)) {
-            return SessionManager.getUserDisplayName(this.documentId);
+        if (SessionManager.getSavedUser(this.documentId)) {
+            return SessionManager.getSavedUser(this.documentId).personalData.displayName;
         }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.DISPLAYNAME).then((val) => {
-                SessionManager.setUserDisplayName(this.documentId, val);
                 resolve(val);
             })
         })
@@ -285,22 +289,19 @@ export class UserManager extends ObjectManager {
     }
 
     async getPfpUrl() {
-        if (SessionManager.getUserPfpUrl(this.documentId)) {
-            return SessionManager.getUserPfpUrl(this.documentId);
+        if (SessionManager.getSavedUser(this.documentId)) {
+            return SessionManager.getSavedUser(this.documentId).personalData.pfpUrl;
         }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.PFPURL).then((val) => {
-                SessionManager.setUserPfpUrl(this.documentId, val);
                 resolve(val);
             })
         })
     }
 
     async getRelations() {
-        if (this.documentId === SessionManager.getUserId()) {
-            if (SessionManager.getCurrentUserManager().fetched) {
-                return SessionManager.getCurrentUserManager().data.relations;
-            }
+        if (SessionManager.getSavedUser(this.documentId)) {
+            return SessionManager.getSavedUser(this.documentId).relations;
         }
         return new Promise(async (resolve, reject) => {
             this.handleGet(this.fields.RELATIONS).then((val) => {
@@ -310,6 +311,11 @@ export class UserManager extends ObjectManager {
     }
 
     async getRelationWithUser(userId) {
+        if (SessionManager.getSavedUser(this.documentId)) {
+            if (SessionManager.getSavedUser(this.documentId).relations[userId]) {
+                return new UserRelation(SessionManager.getSavedUser(this.documentId).relations[userId]);
+            }
+        }
         await this.fetchData();
         return new Promise(async (resolve, reject) => {
             const allRelations = await this.getRelations();
