@@ -17,7 +17,7 @@ export class RouteManager {
      * @param {string} destination window.location to send user to
      */
     static redirect(destination) {
-        routeDebugger.logWithPrefix("Redirecting user to " + destination);
+        // routeDebugger.logWithPrefix("Redirecting user to " + destination);
         window.location = destination;
     }
 
@@ -27,7 +27,7 @@ export class RouteManager {
      * @param {string} hash hash to add to end of redirect
      */
     static redirectWithHash(destination, hash) {
-        routeDebugger.logWithPrefix("Redirecting user to " + destination + "#" + hash);
+        // routeDebugger.logWithPrefix("Redirecting user to " + destination + "#" + hash);
         window.location = destination + "#" + hash;
     }
 
