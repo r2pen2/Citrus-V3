@@ -117,7 +117,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function renderGroups() {
         if (!userData.fetched) {
-            console.log(SessionManager.getCurrentUserManager())
             return userData.groupIds.map(group => {
                 return <Skeleton key={group} variant="rounded" height={70} className="skeleton-round mb-2" />
             })
