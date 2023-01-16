@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 // Component imports
 import { Breadcrumbs } from "../../resources/Navigation";
 import { PeopleList } from "../../resources/PeopleResources";
-import { SortSelector } from "../../resources/Misc";
+import { SortSelector } from "../../resources/PeopleResources";
 
 // API imports
 import { SessionManager } from "../../../api/sessionManager";

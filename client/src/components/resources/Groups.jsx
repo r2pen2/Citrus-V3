@@ -2,7 +2,7 @@
 import "./style/groups.scss";
 
 // Library Imports
-import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, InputAdornment, Tooltip } from "@mui/material";
+import { FormControl, TextField, Skeleton, CardActionArea, CardContent, Typography, Button, IconButton, InputAdornment, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -10,7 +10,7 @@ import StarIcon from '@mui/icons-material/Star';
 import SearchIcon from '@mui/icons-material/Search';
 
 // Component Imports
-import {Breadcrumbs} from "./Navigation";
+import { Breadcrumbs } from "./Navigation";
 import { OutlinedCard } from "./Surfaces";
 import { BalanceLabel, EmojiBalanceBar } from "./Balances";
 
@@ -101,9 +101,21 @@ export function GroupsList({groupManagers}) {
   )
 }
 
+
 function GroupCard({group}) {
+  function emojisShouldRender() {
+    const userBalances = Object.keys(group.data.balances[SessionManager.getUserId()]);
+    // Check if user has more than one currency
+    const multipleCurrencies = userBalances.length > 1;
+    // Check if user's currencies include USD
+    const hasUSD = userBalances.includes("USD");
+    // Check if USD is the only currency
+    const justUSD = userBalances.length === 1 && hasUSD;
+    return multipleCurrencies && !justUSD;
+  }
+
   return (
-      <div className="user-relation-card w-100 mb-3">
+      <div className="w-100 mb-3">
         <OutlinedCard disableMarginBottom={true}>
             <CardActionArea onClick={() => window.location = "/dashboard/group?id=" + group.documentId}>
                 <CardContent>
@@ -116,7 +128,7 @@ function GroupCard({group}) {
                           </div>
                           <div className="w-10 d-flex flex-column gap-10 align-items-center mr-2">
                             <BalanceLabel groupBalances={group.data.balances} size="small"/>
-                            <EmojiBalanceBar groupBalances={group.data.balances} size="small" />
+                            { emojisShouldRender() && <EmojiBalanceBar groupBalances={group.data.balances} size="small" />}
                           </div>
                        </div>
                 </CardContent>
@@ -125,6 +137,10 @@ function GroupCard({group}) {
       </div>
   )
 } 
+
+export function GroupCardSkeleton() {
+  return <Skeleton variant="rounded" height={100} />
+}
 
 export function GroupInvite() {
 
