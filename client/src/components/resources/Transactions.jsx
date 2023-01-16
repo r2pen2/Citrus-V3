@@ -94,14 +94,12 @@ export function TransactionDetail() {
     return Object.entries(transactionData.balances).map((key, index) => {
       const uid = key[0];
       const bal = key[1];
-      if (bal > 0) {
-        return (
+        return (bal > 0) && (
           <AvatarCard key={uid} id={uid}>
             <div className="color-primary font-weight-bold">{getCurrencyString(bal)}</div>
           </AvatarCard>
         )
-      }
-    })
+      })
   }
 
   function renderLendorCards() {
@@ -109,20 +107,18 @@ export function TransactionDetail() {
     return Object.entries(transactionData.balances).map((key, index) => {
       const uid = key[0];
       const bal = key[1];
-      if (bal < 0) {
-        return (
-          <AvatarCard key={uid} id={uid}>
-            <div className={"text-red font-weight-bold"}>{getCurrencyString(bal)}</div>
-          </AvatarCard>
-        )
-      }
+      return (bal < 0) && (
+        <AvatarCard key={uid} id={uid}>
+          <div className={"text-red font-weight-bold"}>{getCurrencyString(bal)}</div>
+        </AvatarCard>
+      )
     })
   }
 
   function renderUserBalances() {
     if (!transactionData.isIOU) {
       return (
-        <section className="d-flex flex-column w-50 justify-content-start">
+        <section className="d-flex flex-column w-50 justify-content-start align-items-center">
         <h2>Paid by:</h2>
           {renderPaidByCards()}
         <h2>Lendors:</h2>

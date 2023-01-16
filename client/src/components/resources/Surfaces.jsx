@@ -44,7 +44,8 @@ export function OutlinedCard(props) {
             width: "100%",
             marginBottom: props.disableMarginBottom ? "0px" : "10px",
             border: (props.borderWeight ? props.borderWeight : "1px") + " " + (props.borderStyle ? props.borderStyle : "solid") + " " + (props.borderColor ? props.borderColor : "darkgrey"),
-            color: props.color ? props.color : "black"
+            color: props.color ? props.color : "black",
+            minWidth: "50vw"
         }
     }
     

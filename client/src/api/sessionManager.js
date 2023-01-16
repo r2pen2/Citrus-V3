@@ -196,12 +196,14 @@ export class SessionManager {
             map[userId] = userData;
         } else {
             // This isn't current user, so we should remove some (most) information
-            map[userId] = {
+            console.log(userData);
+            const obfuscatedUserData = {
                 personalData: {
-                    displayName: userData.displayName,
-                    pfpUrl: userData.pfpUrl,
+                    displayName: userData.personalData.displayName,
+                    pfpUrl: userData.personalData.pfpUrl ? userData.personalData.pfpUrl : "https://robohash.org/" + userId,
                 }
             }
+            map[userId] = obfuscatedUserData;
         }
         const string = JSON.stringify(map);
         localStorage.setItem("citrus:userData", string);

@@ -80,6 +80,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
             for (const friendId of friendIds) {
                 const friendUserManager = DBManager.getUserManager(friendId);
                 let friendName = await friendUserManager.getDisplayName();
+                console.log(friendName);
                 let friendPhoto = await friendUserManager.getPfpUrl();
                 newFriends.push({id: friendId, displayName: friendName, pfpUrl: friendPhoto, checked: false});
             }
