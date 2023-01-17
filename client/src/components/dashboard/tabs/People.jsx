@@ -35,9 +35,7 @@ export default function People() {
 
   useEffect(() => {
       async function fetchRelations() {
-        console.log(usersData);
-        let allRelations = null;
-        let friendsList = null;
+        let allRelations, friendsList = null;
         if (usersData[SessionManager.getUserId()]) {
             allRelations = usersData[SessionManager.getUserId()].relations;
             friendsList = usersData[SessionManager.getUserId()].friends;
@@ -50,8 +48,7 @@ export default function People() {
         }
         const friends = [];
         const others = [];
-        Object.entries(allRelations).forEach(([key, value]) => {
-            const listItem = value;
+        Object.entries(allRelations).forEach(([key, listItem]) => {
             listItem["userId"] = key;
             if (friendsList.includes(key)) {
                 friends.push(listItem);

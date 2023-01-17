@@ -128,8 +128,8 @@ export class DBManager {
     /**
      * Get object managers of correct type
      */
-    static getGroupManager(id) {
-        return new GroupManager(id);
+    static getGroupManager(id, data) {
+        return new GroupManager(id, data);
     }
     static getInvitationManager(id) {
         return new InvitationManager(id);
@@ -144,9 +144,6 @@ export class DBManager {
     // For use by SessionManager and SessionManager only!
     static createUserManagerFromLocalStorage(id, data) {
         return new UserManager(id, data);
-    }
-    static createGroupManagerFromLocalStorage(id, data) {
-        return new GroupManager(id, data);
     }
     static createTransactionManagerFromLocalStorage(id, data) {
         return new TransactionManager(id, data);

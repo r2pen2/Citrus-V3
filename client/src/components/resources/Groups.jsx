@@ -3,7 +3,7 @@ import "./style/groups.scss";
 
 // Library Imports
 import { FormControl, TextField, Skeleton, CardActionArea, CardContent, Typography, Button, IconButton, InputAdornment, Tooltip } from "@mui/material";
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import StarIcon from '@mui/icons-material/Star';
@@ -20,6 +20,7 @@ import { getDateString } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
 import { AvatarStack } from "./Avatars";
+import { GroupsContext, TransactionsContext } from "../../App";
 
 // Get user manager from LS
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -86,11 +87,11 @@ export function GroupNew() {
   );
 }
 
-export function GroupsList({groupManagers}) {
+export function GroupsList({groupManagers, setFocusedGroup}) {
 
   function renderGroups() {
     return groupManagers.map((groupManager, index) => {
-      return <GroupCard key={index} group={groupManager}></GroupCard>
+      return <GroupCard key={index} group={groupManager} setFocusedGroup={setFocusedGroup}></GroupCard>
     });
   }
   
@@ -102,7 +103,7 @@ export function GroupsList({groupManagers}) {
 }
 
 
-function GroupCard({group}) {
+function GroupCard({group, setFocusedGroup}) {
   function emojisShouldRender() {
     const userBalances = Object.keys(group.data.balances[SessionManager.getUserId()]);
     // Check if user has more than one currency
@@ -117,7 +118,7 @@ function GroupCard({group}) {
   return (
       <div className="w-100 mb-3">
         <OutlinedCard disableMarginBottom={true}>
-            <CardActionArea onClick={() => window.location = "/dashboard/group?id=" + group.documentId}>
+            <CardActionArea onClick={() => setFocusedGroup(group.documentId)}>
                 <CardContent>
                       <div className="transaction-card-content d-flex flex-row align-items-center w-100">
                           <div className="w-50">
@@ -228,14 +229,15 @@ export function GroupInvite() {
     );
 }
 
-export function GroupDetail() {
-  const params = new URLSearchParams(window.location.search);
-  const groupId = params.get("id");
+export function GroupDetail({groupId}) {
+
+  const { groupsData, setGroupsData } = useContext(GroupsContext);
+  const { transactionsData, setTransactionsData } = useContext(TransactionsContext);
 
   const [groupData, setGroupData] = useState({
-    users: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).users : [],
-    name: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).name : "",
-    balances: SessionManager.getSavedGroup(groupId) ? SessionManager.getSavedGroup(groupId).balances : {},
+    users: groupsData[groupId] ? groupsData[groupId].users : [],
+    name: groupsData[groupId] ? groupsData[groupId].name : "",
+    balances: groupsData[groupId] ? groupsData[groupId].balances : {},
   });
 
   const [search, setSearch] = useState("");
@@ -245,20 +247,29 @@ export function GroupDetail() {
   useEffect(() => {
     
     async function fetchGroupData() {
-      let groupManager = DBManager.getGroupManager(groupId);
-      if (SessionManager.getSavedGroup(groupId)) {
-        groupManager = DBManager.createGroupManagerFromLocalStorage(groupId, SessionManager.getSavedGroup(groupId))
+      let groupManager = null;
+      if (groupsData[groupId]) {
+        groupManager = DBManager.getGroupManager(groupId, groupsData[groupId]);
       } else {
+        groupManager = DBManager.getGroupManager(groupId);
         await groupManager.fetchData();
+        const newData = { ...groupsData };
+        newData[groupId] = groupManager.data;
+        setGroupsData(newData);
       }
       setGroupData(groupManager.data);
+      
       let newTransactionManagers = [];
       for (const transactionId of groupManager.data.transactions) {
-        let transactionManager = DBManager.getTransactionManager(transactionId);
-        if (SessionManager.getSavedTransaction(transactionId)) {
-          transactionManager = DBManager.createTransactionManagerFromLocalStorage(transactionId, SessionManager.getSavedTransaction(transactionId))
+        let transactionManager = null;
+        if (transactionsData[transactionId]) {
+          transactionManager = DBManager.getTransactionManager(transactionId, transactionsData[transactionId]);
         } else {
+          transactionManager = DBManager.getTransactionManager(transactionId);
           await transactionManager.fetchData();
+          const newData = { ...transactionsData };
+          newData[transactionId] = transactionManager.data;
+          setTransactionsData(newData);
         }
         newTransactionManagers.push(transactionManager);
       }
@@ -266,6 +277,7 @@ export function GroupDetail() {
     }
 
     fetchGroupData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
   function renderHistory() {
