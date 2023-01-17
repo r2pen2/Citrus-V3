@@ -7,7 +7,8 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
-import { useState, useEffect } from "react";
+import { useState, useContext } from "react";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // API Imports
 import { UserRelation } from "../../api/db/objectManagers/userManager";
@@ -23,6 +24,7 @@ import { RouteManager } from "../../api/routeManager";
 import { getDateString } from "../../api/strings";
 import { CurrencyManager } from "../../api/currencyManager";
 import { DBManager } from "../../api/db/dbManager";
+import { UsersContext } from "../../App";
 
 export function PeopleList({relations, sortingScheme, filter, setFocusedUser}) {
 
@@ -32,34 +34,29 @@ export function PeopleList({relations, sortingScheme, filter, setFocusedUser}) {
             return <UserRelationCard key={index} relation={relation} setFocusedUser={setFocusedUser}/>;
         })
     }
-
-    function renderPeopleList() {
-
-        function renderOthers() {
-            return <section>
-                    <SectionTitle title="Other Users" />
-                    { relations.fetched && renderRelationCards(relations.others) }
-            </section>
-        }
-        
-        function renderFriends() {
-            return <section>
-                <SectionTitle title="Friends">
-                    <Button variant="contained">Add Friends</Button>
-                </SectionTitle>
-                { relations.fetched && renderRelationCards(relations.friends) }   
-            </section>
-        }
-
-        return (
-            <div className="relation-cards-wrapper">
-                { filter.friends && renderFriends() }
-                { filter.others && renderOthers() }
-            </div>
-        )
+    
+    function renderOthers() {
+        return <section>
+                <SectionTitle title="Other Users" />
+                { relations.fetched && renderRelationCards(relations.others) }
+        </section>
+    }
+    
+    function renderFriends() {
+        return <section>
+            <SectionTitle title="Friends">
+                <Button variant="contained">Add Friends</Button>
+            </SectionTitle>
+            { relations.fetched && renderRelationCards(relations.friends) }   
+        </section>
     }
 
-    return renderPeopleList();
+    return (
+        <div className="relation-cards-wrapper">
+            { filter.friends && renderFriends() }
+            { filter.others && renderOthers() }
+        </div>
+    )
 }
 
 
@@ -152,90 +149,60 @@ export function SortSelector({setSortingScheme, sortingScheme, setFilter, filter
                 </Select>
             </FormControl>
             <div className="d-flex flex-row gap-10 align-items-center justify-content-end w-50">
-                { setFilter && filter && renderFilterChip(filter.friends, "friends") }
-                { setFilter && filter && renderFilterChip(filter.others, "others") }
+                { renderFilterChip(filter.friends, "friends") }
+                { renderFilterChip(filter.others, "others") }
             </div>
         </div>
         
     )
 }
 
+export function UserDetail({userId, goBack}) {
+    
+  const { usersData } = useContext(UsersContext);
+  const userRelation = new UserRelation(usersData[SessionManager.getUserId()].relations[userId])
+  const usd = userRelation.balances["USD"] ? userRelation.balances["USD"] : 0;
 
-
-const currentUserManager = SessionManager.getCurrentUserManager();
-
-export function UserDetail({id}) {
-  const params = new URLSearchParams(window.location.search);
-  const userId = id;
-
-  const [userRelation, setUserRelation] = useState(initRelation());
   const [settleOpen, setSettleOpen] = useState(false);
   const [settleCurrency, setSettleCurrency] = useState({legal: true, legalType: CurrencyManager.legalCurrencies.USD, emojiType: CurrencyManager.emojiCurrencies.BEER});
-  const [settleAmount, setSettleAmount] = useState(0);
+  const [settleAmount, setSettleAmount] = useState(usd < 0 ? Math.abs(usd) : 0);
   const [search, setSearch] = useState("");
-
-  function initRelation() {
-    if (currentUserManager.data.relations[userId]) {
-      return new UserRelation(currentUserManager.data.relations[userId]);
-    }
-  }
-
-  useEffect(() => {
-
-    async function fetchTransactionData() {
-      // Check if there's an ID
-      if (!userId || userId.length <= 0) {
-        RouteManager.redirect("/dashboard");
-        return;
-      }
-      const relation = await currentUserManager.getRelationWithUser(userId);
-      setUserRelation(relation);
-      const usd = relation.balances["USD"] ? relation.balances["USD"] : 0;
-      setSettleAmount(usd < 0 ? Math.abs(usd) : 0);
-    }
-
-    // Fetch transaction data on load
-    fetchTransactionData();
-  }, [userId]);
 
   function renderHistory() {
     return userRelation.getHistory().map((history, index) => {
 
-      function renderIcon() {
-        return (
-          <Tooltip placement="left" title={history.group ? "This was a group transaction" : "This was a transaction between friends"} >
-            { history.group ? <GroupsIcon /> : <HandshakeIcon /> }
-          </Tooltip>
-        )
-      }
-
       function handleClick(e) {
         RouteManager.redirectToTransaction(history.transaction);
       }
+
+      const searchIncluded = search.length === 0 || history.transactionTitle.toLowerCase().includes(search.toLowerCase()) || getDateString(history.date).toLowerCase().includes(search.toLowerCase());
       
-      if (search.length === 0 || history.transactionTitle.toLowerCase().includes(search.toLowerCase())) {
-        return (
-          <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-              <div className="d-flex flex-column align-items-left">
-                <div className="d-flex flex-row align-items-center gap-10">
-                  { renderIcon() }
-                  <h2>
-                    { history.transactionTitle }
-                  </h2>
-                </div>
-                <p>{getDateString(history.date)}</p>
-              </div>
-              <BalanceLabel history={history} />
+      const card = (
+        <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+        <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+          <div className="d-flex flex-column align-items-left">
+            <div className="d-flex flex-row align-items-center gap-10">
+                <Tooltip placement="left" title={history.group ? "This was a group transaction" : "This was a transaction between friends"} >
+                    { history.group ? <GroupsIcon /> : <HandshakeIcon /> }
+                </Tooltip>
+              <h2>
+                { history.transactionTitle }
+              </h2>
             </div>
-          </OutlinedCard>
-        )
-      } 
+            <p>{getDateString(history.date)}</p>
+          </div>
+          <BalanceLabel history={history} />
+        </div>
+      </OutlinedCard> 
+      )
+
+      return searchIncluded && card;
     })
   }
 
   function handleLegalButtonPress() {
-    const newState = {legal: !settleCurrency.legal, legalType: settleCurrency.legalType, emojiType: settleCurrency.emojiType};
+    const newState = { ...settleCurrency };
+    newState.legal = !newState.legal;
     setSettleCurrency(newState);
     updateCurrencyAmount(newState);
   }
@@ -254,20 +221,10 @@ export function UserDetail({id}) {
   }
 
   function handleCurrencyTypeChange(e) {
-    let newState = {
-      legal: null,
-      legalType: null,
-      emojiType: null
-    }
-    if (settleCurrency.legal) {
-      newState.legal = e.target.value;
-      newState.legalType = e.target.value;
-      newState.emojiType = settleCurrency.emojiType;
-    } else {
-      newState.legal = settleCurrency.legal;
-      newState.legalType = settleCurrency.legalType;
-      newState.emojiType = e.target.value;
-    }
+    const newState = { ...settleCurrency };
+    newState.legal = settleCurrency.legal ? e.target.value : settleCurrency.legal;
+    newState.legalType = settleCurrency.legal ? e.target.value : settleCurrency.legalType;
+    newState.emojiType = settleCurrency.legal ? settleCurrency.emojiType : e.target.value;
     setSettleCurrency(newState);
     updateCurrencyAmount(newState);
   }
@@ -281,7 +238,7 @@ export function UserDetail({id}) {
   }
 
   async function handleSettleSubmit() {
-    const newTransactionTitle = `${SessionManager.getDisplayName()} settled with ${userRelation.displayName}`;
+    const newTransactionTitle = `${usersData[SessionManager.getUserId()].personalData.displayName} settled with ${userRelation.displayName}`;
 
     let settleGroups = {};
 
@@ -406,6 +363,9 @@ function getOweMessage() {
 
   return (
     <div className="d-flex flex-column align-items-center">
+        <section className="d-flex flex-row w-100" >
+            <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={goBack}>Back</Button>
+        </section>
       <section className="d-flex flex-column align-items-center m-5 gap-10">
         <AvatarIcon id={userId} size="150px"/>
         <h1>{userRelation.displayName}</h1>

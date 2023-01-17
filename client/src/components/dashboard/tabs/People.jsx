@@ -69,7 +69,7 @@ export default function People() {
   }, []);
 
   function getBreadcrumbPath() {
-    return `Dashboard/People${focusedUser ? "/" + usersData[focusedUser].personalData.displayName : ""}`
+    return `Dashboard/People${focusedUser && usersData[focusedUser] ? "/" + usersData[focusedUser].personalData.displayName : ""}`
   }
 
   return (
@@ -77,7 +77,7 @@ export default function People() {
         <Breadcrumbs path={getBreadcrumbPath()} />
         { !focusedUser && <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme} setFilter={setFilter} filter={filter}/> }
         { !focusedUser && <PeopleList sortingScheme={sortingScheme} relations={relations} filter={filter} setFocusedUser={setFocusedUser} /> }
-        { focusedUser && <UserDetail id={focusedUser} /> }
+        { focusedUser && <UserDetail userId={focusedUser} goBack={() => setFocusedUser(null)} /> }
     </div>
   );
 }
