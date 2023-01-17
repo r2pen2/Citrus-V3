@@ -11,6 +11,7 @@ import { UsersContext } from "../../../App";
 // API imports
 import { SessionManager } from "../../../api/sessionManager";
 import { UserRelation } from "../../../api/db/objectManagers/userManager";
+import { UserDetail } from "../../resources/PeopleResources";
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -29,6 +30,8 @@ export default function People() {
     friends: true,
     others: true
   });
+
+  const [focusedUser, setFocusedUser] = useState(null);
 
   useEffect(() => {
       async function fetchRelations() {
@@ -65,11 +68,16 @@ export default function People() {
       fetchRelations();
   }, []);
 
+  function getBreadcrumbPath() {
+    return `Dashboard/People${focusedUser ? "/" + usersData[focusedUser].personalData.displayName : ""}`
+  }
+
   return (
     <div className="d-flex flex-column gap-10"> 
-        <Breadcrumbs path="Dashboard/People" />
-        <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme} setFilter={setFilter} filter={filter}/>
-        <PeopleList sortingScheme={sortingScheme} relations={relations} filter={filter} />
+        <Breadcrumbs path={getBreadcrumbPath()} />
+        { !focusedUser && <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme} setFilter={setFilter} filter={filter}/> }
+        { !focusedUser && <PeopleList sortingScheme={sortingScheme} relations={relations} filter={filter} setFocusedUser={setFocusedUser} /> }
+        { focusedUser && <UserDetail id={focusedUser} /> }
     </div>
   );
 }

@@ -88,7 +88,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 groupIds = await currentUserManager.getGroups();
                 const newData = { ...usersData };
                 newData[SessionManager.getUserId()] = currentUserManager.data;
-                setUserData(newData);
+                setUsersData(newData);
             }
             let newFriends = [];
             for (const friendId of friendIds) {
@@ -102,7 +102,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                     friendPhoto = await friendUserManager.getPfpUrl();
                     const newData = { ...usersData };
                     newData[friendId] = friendUserManager.data;
-                    setUserData(newData);
+                    setUsersData(newData);
                 }
                 newFriends.push({id: friendId, displayName: friendName, pfpUrl: friendPhoto, checked: false});
             }
@@ -205,7 +205,7 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                     <CardActionArea onClick={e => handleFriendCheckbox(e, friend.id)} >
                         <div className="d-flex flex-row justify-content-between m-2">
                             <div className="d-flex flex-row align-items-center gap-10">
-                                <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
+                                <AvatarIcon id={friend.id}/>
                                 <div>{friend.displayName}</div>
                             </div>
                             <Checkbox disabled={checkedGroup !== null} checked={checkedFriends.includes(friend.id) && !checkedGroup} icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} />

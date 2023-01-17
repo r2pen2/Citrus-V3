@@ -12,7 +12,6 @@ import NewTransaction from "./tabs/NewTransaction";
 import UserGroups from "./tabs/UserGroups";
 import Transaction from "./routes/Transaction";
 import Group from "./routes/Group";
-import User from "./routes/User";
 
 // API imports
 import { RouteManager } from "../../api/routeManager";
@@ -50,7 +49,6 @@ export default function Dashboard() {
           <Route path="*" element={ renderTab() }/>
           <Route path="/transactions/*" element={<Transaction />}/>
           <Route path="/group/*" element={<Group />}/>
-          <Route path="/user/*" element={<User />}/>
         </Routes>
       </div>
       <BottomNav />

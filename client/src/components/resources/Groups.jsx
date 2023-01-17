@@ -123,10 +123,10 @@ function GroupCard({group}) {
                           <div className="w-50">
                             <AvatarStack ids={group.data.users} max={3}/>
                           </div>
-                          <div className="w-100 d-flex flex-row overflow-hidden justify-content-center">
+                          <div className="w-50 d-flex flex-row overflow-hidden justify-content-center">
                             <Typography variant="h1" >{group.data.name}</Typography>
                           </div>
-                          <div className="w-10 d-flex flex-column gap-10 align-items-center mr-2">
+                          <div className="w-25 d-flex flex-column gap-10 align-items-center">
                             <BalanceLabel groupBalances={group.data.balances} size="small"/>
                             { emojisShouldRender() && <EmojiBalanceBar groupBalances={group.data.balances} size="small" />}
                           </div>
