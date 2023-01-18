@@ -13,57 +13,64 @@ import { SessionManager } from "../../../api/sessionManager";
 import { UserRelation } from "../../../api/db/objectManagers/userManager";
 import { UserDetail } from "../../resources/PeopleResources";
 
-const currentUserManager = SessionManager.getCurrentUserManager();
-
 export default function People() {
 
+    // Get context from App.js
     const { usersData, setUsersData } = useContext(UsersContext);
-  
 
-  const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE);
-  const [relations, setRelations] = useState({
-      friends: [],
-      others: [],
-      fetched: false,
-  });
-  const [filter, setFilter] = useState({
-    friends: true,
-    others: true
-  });
+    // Define states
+    const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE); // Sort type
+    const [relations, setRelations] = useState({
+        friends: [], // Relations with friends
+        others: [], // Relations with users who aren't friends
+        fetched: false, // Whether or not we've loaded user's data (arrays will remain empty if user has no relations)
+    });
+    const [filter, setFilter] = useState({
+        friends: true,  // Whether or not to show relations with friends
+        others: true    // Whether or not to show relations with people who aren't friends
+    });
+    const [focusedUser, setFocusedUser] = useState(null); // ID of user that we'd like to "focus" (open history)
 
-  const [focusedUser, setFocusedUser] = useState(null);
+    // Fetch current user's relations once component has mounted
+    useEffect(() => {
+        async function fetchRelations() {
 
-  useEffect(() => {
-      async function fetchRelations() {
-        let allRelations, friendsList = null;
-        if (usersData[SessionManager.getUserId()]) {
-            allRelations = usersData[SessionManager.getUserId()].relations;
-            friendsList = usersData[SessionManager.getUserId()].friends;
-        } else {
-            allRelations = await currentUserManager.getRelations();
-            friendsList = await currentUserManager.getFriends();
-            const newData = { ...usersData };
-            newData[SessionManager.getUserId()] = currentUserManager.data;
-            setUsersData(newData); 
-        }
-        const friends = [];
-        const others = [];
-        Object.entries(allRelations).forEach(([key, listItem]) => {
-            listItem["userId"] = key;
-            if (friendsList.includes(key)) {
-                friends.push(listItem);
+            // Get current user's data
+            let allRelations, friendsList; 
+            if (usersData[SessionManager.getUserId()]) {  // Check if current user is already saved locally
+                // Current user has been fetched already— fetch from local
+                allRelations = usersData[SessionManager.getUserId()].relations;
+                friendsList = usersData[SessionManager.getUserId()].friends;
             } else {
-                others.push(listItem);
+                // Current user is not saved locally— fetch data and save it
+                const currentUserManager = SessionManager.getCurrentUserManager();
+                await currentUserManager.fetchData(); // Fetch data
+                allRelations = currentUserManager.data.relations;
+                friendsList = currentUserManager.data.friends;
+                const newData = { ...usersData }; // Update context
+                newData[SessionManager.getUserId()] = currentUserManager.data;
+                setUsersData(newData);  // Save context
             }
-        })
-        setRelations({
-            friends: friends,
-            others: others,
-            fetched: true,
-        })
-      }
-      fetchRelations();
-  }, []);
+
+            // Sort relations into "friends" and "others"
+            const friends = [];
+            const others = [];
+            Object.entries(allRelations).forEach(([userId, relationData]) => {
+                relationData["userId"] = userId; // Add a "userId" field to the raw relation data
+                if (friendsList.includes(userId)) {
+                    friends.push(relationData); // Sort into "friends" array
+                } else {
+                    others.push(relationData); // Sort into "others" array
+                }
+            })
+            setRelations({ // Set relation data
+                friends: friends,
+                others: others,
+                fetched: true,
+            })
+        }
+        fetchRelations();
+    }, []);
 
   function getBreadcrumbPath() {
     return `Dashboard/People${focusedUser && usersData[focusedUser] ? "/" + usersData[focusedUser].personalData.displayName : ""}`
