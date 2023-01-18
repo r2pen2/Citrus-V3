@@ -2,7 +2,6 @@ import { doc, collection, addDoc, getDoc, setDoc, deleteDoc } from "firebase/fir
 import { firestore } from "../../firebase";
 import { Debugger } from "../../debugger";
 import { Change, DBManager } from "../dbManager";
-import { SessionManager } from "../../sessionManager";
 
 /**
  * ObjectManager is an abstract class used to standardize higher-level oprations of database objects
