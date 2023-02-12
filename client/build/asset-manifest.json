@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/static/css/main.b67ccf35.css",
+    "main.js": "/static/js/main.2c02c591.js",
+    "static/media/OrangeSplash.png": "/static/media/OrangeSplash.6b6cd71f4e531d8b3566.png",
+    "static/media/FredokaOne-Regular.ttf": "/static/media/FredokaOne-Regular.5e19f05c9f5dab094c8b.ttf",
+    "static/media/Logo256.png": "/static/media/Logo256.ef1304e973e38be5b849.png",
+    "static/media/notification.svg?s3g3t9": "/static/media/notification.5d0158671dd860c714c4.svg",
+    "static/media/notification.eot": "/static/media/notification.3657084dc0419605a91c.eot",
+    "static/media/notification.woff?s3g3t9": "/static/media/notification.c392cd33d9d9de730f9d.woff",
+    "static/media/notification.ttf?s3g3t9": "/static/media/notification.c5d9251ea82e42f75381.ttf",
+    "static/media/GoogleLogo.svg": "/static/media/GoogleLogo.66ae25beb1eb0655ac594978ee31ddb2.svg",
+    "index.html": "/index.html",
+    "static/media/waveOrange.svg": "/static/media/waveOrange.3811fa3c6aa9af140245.svg",
+    "static/media/waveOrange2.svg": "/static/media/waveOrange2.0a20baad74bfb0eb59fe.svg",
+    "main.b67ccf35.css.map": "/static/css/main.b67ccf35.css.map",
+    "main.2c02c591.js.map": "/static/js/main.2c02c591.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b67ccf35.css",
+    "static/js/main.2c02c591.js"
+  ]
+}
