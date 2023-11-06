@@ -2,7 +2,7 @@
 import "./style/transactions.scss";
 
 // Library imports
-import { Tooltip, Button } from '@mui/material';
+import { Tooltip, Button, Skeleton } from '@mui/material';
 import { useState, useEffect} from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
@@ -23,18 +23,22 @@ export function TransactionDetail() {
   const transactionId = params.get("id");
 
   const [transactionData, setTransactionData] = useState({
-    currency: {legal: true, type: "USD"},
-    amount: null,
-    date: null,
-    title: "",
-    balances: {},
-    createdBy: null,
-    group: null,
+    currency: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).currency : {legal: true, type: "USD"},
+    amount: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).amount : 0,
+    date: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).date : null,
+    title: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).title : "",
+    balances: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).balances : {},
+    createdBy: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).createdBy : null,
+    group: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).group : null,
+    isIOU: SessionManager.getSavedTransaction(transactionId) ? SessionManager.getSavedTransaction(transactionId).isIOU : null,
   });
-  const [isIOU, setIsIOU] = useState(true);
 
   function getCurrencyString(balance) {
-    return transactionData.currency.legal ? CurrencyManager.formatUSD(Math.abs(balance)) : transactionData.currency.type + " x " + Math.abs(balance);
+    return transactionData.currency.legal ? CurrencyManager.formatUSD(balance) : transactionData.currency.type + " x " + balance;
+  }
+  
+  function getTitleString(balance) {
+    return transactionData.currency.legal ? CurrencyManager.formatUSD(balance, true) : transactionData.currency.type + " x " + balance;
   }
 
   useEffect(() => {
@@ -48,7 +52,12 @@ export function TransactionDetail() {
       const tm = DBManager.getTransactionManager(transactionId);
       const data = await tm.fetchData();
       setTransactionData(data);
-      setIsIOU(Object.keys(data.balances).length === 2);
+      let onePayer = false;
+      for (const k of Object.keys(transactionData.balances)) {
+        if (transactionData.balances[k] === transactionData.amount) {
+          onePayer = true;
+        }
+      }
     }
 
     // Fetch transaction data on load
@@ -85,14 +94,12 @@ export function TransactionDetail() {
     return Object.entries(transactionData.balances).map((key, index) => {
       const uid = key[0];
       const bal = key[1];
-      if (bal > 0) {
-        return (
+        return (bal > 0) && (
           <AvatarCard key={uid} id={uid}>
             <div className="color-primary font-weight-bold">{getCurrencyString(bal)}</div>
           </AvatarCard>
         )
-      }
-    })
+      })
   }
 
   function renderLendorCards() {
@@ -100,20 +107,18 @@ export function TransactionDetail() {
     return Object.entries(transactionData.balances).map((key, index) => {
       const uid = key[0];
       const bal = key[1];
-      if (bal < 0) {
-        return (
-          <AvatarCard key={uid} id={uid}>
-            <div className={"text-red font-weight-bold"}>{getCurrencyString(bal)}</div>
-          </AvatarCard>
-        )
-      }
+      return (bal < 0) && (
+        <AvatarCard key={uid} id={uid}>
+          <div className={"text-red font-weight-bold"}>{getCurrencyString(bal)}</div>
+        </AvatarCard>
+      )
     })
   }
 
   function renderUserBalances() {
-    if (!isIOU) {
+    if (!transactionData.isIOU) {
       return (
-        <section className="d-flex flex-column w-50 justify-content-start">
+        <section className="d-flex flex-column w-50 justify-content-start align-items-center">
         <h2>Paid by:</h2>
           {renderPaidByCards()}
         <h2>Lendors:</h2>
@@ -124,7 +129,7 @@ export function TransactionDetail() {
   }
 
   function renderAvatars() {
-    if (isIOU) {
+    if (transactionData.isIOU) {
 
       let fromId = null;
       let toId = null;
@@ -153,7 +158,7 @@ export function TransactionDetail() {
       <Breadcrumbs path={`Dashboard/Transactions/${transactionData.title}`}/>
       <section className="d-flex flex-column align-items-center gap-10 m-5">
         <h2>{transactionData.title}</h2>
-        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getCurrencyString(transactionData.amount)}</h1>
+        <h1 className={getAmountTextColor(SessionManager.getUserId())}>{getTitleString(Math.abs(transactionData.amount))}</h1>
         { renderAvatars() }
       </section>
       { renderUserBalances() }

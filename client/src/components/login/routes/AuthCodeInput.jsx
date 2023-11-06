@@ -38,7 +38,7 @@ export default function AuthCodeInput({phoneNumber, confirmationResult, resendCo
       // Verify OTP
       Debugger.log(confirmationResult)
       confirmationResult.confirm(authCode).then((result) => {
-        SessionManager.setUser(result.user);
+        SessionManager.setCurrentUser(result.user);
         if (result.user.displayName) {
           // If we've logged in this user before, redirect to dashboard
           window.location = "/dashboard";

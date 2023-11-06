@@ -2,14 +2,15 @@
 import "./style/groups.scss";
 
 // Library Imports
-import { FormControl, TextField, CardActionArea, CardContent, Typography, Button, IconButton, Tooltip } from "@mui/material";
-import { useState, useEffect } from "react"
+import { FormControl, TextField, Skeleton, CardActionArea, CardContent, Typography, Button, IconButton, InputAdornment, Tooltip } from "@mui/material";
+import { useState, useEffect, useContext } from "react"
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import StarIcon from '@mui/icons-material/Star';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Component Imports
-import {Breadcrumbs} from "./Navigation";
+import { Breadcrumbs } from "./Navigation";
 import { OutlinedCard } from "./Surfaces";
 import { BalanceLabel, EmojiBalanceBar } from "./Balances";
 
@@ -19,6 +20,7 @@ import { getDateString } from "../../api/strings";
 import { SessionManager } from "../../api/sessionManager";
 import { DBManager } from "../../api/db/dbManager";
 import { AvatarStack } from "./Avatars";
+import { GroupsContext, TransactionsContext } from "../../App";
 
 // Get user manager from LS
 const currentUserManager = SessionManager.getCurrentUserManager();
@@ -85,11 +87,11 @@ export function GroupNew() {
   );
 }
 
-export function GroupsList({groupManagers}) {
+export function GroupsList({groupManagers, setFocusedGroup}) {
 
   function renderGroups() {
     return groupManagers.map((groupManager, index) => {
-      return <GroupCard key={index} group={groupManager}></GroupCard>
+      return <GroupCard key={index} group={groupManager} setFocusedGroup={setFocusedGroup}></GroupCard>
     });
   }
   
@@ -100,22 +102,34 @@ export function GroupsList({groupManagers}) {
   )
 }
 
-function GroupCard({group}) {
+
+function GroupCard({group, setFocusedGroup}) {
+  function emojisShouldRender() {
+    const userBalances = Object.keys(group.data.balances[SessionManager.getUserId()]);
+    // Check if user has more than one currency
+    const multipleCurrencies = userBalances.length > 1;
+    // Check if user's currencies include USD
+    const hasUSD = userBalances.includes("USD");
+    // Check if USD is the only currency
+    const justUSD = userBalances.length === 1 && hasUSD;
+    return multipleCurrencies && !justUSD;
+  }
+
   return (
-      <div className="user-relation-card w-100 mb-3">
+      <div className="w-100 mb-3">
         <OutlinedCard disableMarginBottom={true}>
-            <CardActionArea onClick={() => window.location = "/dashboard/group?id=" + group.documentId}>
+            <CardActionArea onClick={() => setFocusedGroup(group.documentId)}>
                 <CardContent>
                       <div className="transaction-card-content d-flex flex-row align-items-center w-100">
                           <div className="w-50">
                             <AvatarStack ids={group.data.users} max={3}/>
                           </div>
-                          <div className="w-100 d-flex flex-row overflow-hidden justify-content-center">
+                          <div className="w-50 d-flex flex-row overflow-hidden justify-content-center">
                             <Typography variant="h1" >{group.data.name}</Typography>
                           </div>
-                          <div className="w-10 d-flex flex-column gap-10 align-items-center mr-2">
+                          <div className="w-25 d-flex flex-column gap-10 align-items-center">
                             <BalanceLabel groupBalances={group.data.balances} size="small"/>
-                            <EmojiBalanceBar groupBalances={group.data.balances} size="small" />
+                            { emojisShouldRender() && <EmojiBalanceBar groupBalances={group.data.balances} size="small" />}
                           </div>
                        </div>
                 </CardContent>
@@ -124,6 +138,10 @@ function GroupCard({group}) {
       </div>
   )
 } 
+
+export function GroupCardSkeleton() {
+  return <Skeleton variant="rounded" height={100} className="skeleton-round" />
+}
 
 export function GroupInvite() {
 
@@ -211,34 +229,55 @@ export function GroupInvite() {
     );
 }
 
-export function GroupDetail() {
-  const params = new URLSearchParams(window.location.search);
-  const groupId = params.get("id");
+export function GroupDetail({groupId}) {
+
+  const { groupsData, setGroupsData } = useContext(GroupsContext);
+  const { transactionsData, setTransactionsData } = useContext(TransactionsContext);
 
   const [groupData, setGroupData] = useState({
-    users: [],
-    name: "",
-    balances: {}
+    users: groupsData[groupId] ? groupsData[groupId].users : [],
+    name: groupsData[groupId] ? groupsData[groupId].name : "",
+    balances: groupsData[groupId] ? groupsData[groupId].balances : {},
   });
+
+  const [search, setSearch] = useState("");
   
   const [groupTransactions, setGroupTransactions] = useState([]);
-
+  
   useEffect(() => {
     
     async function fetchGroupData() {
-      const groupManager = DBManager.getGroupManager(groupId);
-      await groupManager.fetchData();
+      let groupManager = null;
+      if (groupsData[groupId]) {
+        groupManager = DBManager.getGroupManager(groupId, groupsData[groupId]);
+      } else {
+        groupManager = DBManager.getGroupManager(groupId);
+        await groupManager.fetchData();
+        const newData = { ...groupsData };
+        newData[groupId] = groupManager.data;
+        setGroupsData(newData);
+      }
       setGroupData(groupManager.data);
+      
       let newTransactionManagers = [];
       for (const transactionId of groupManager.data.transactions) {
-        const transactionManager = DBManager.getTransactionManager(transactionId);
-        await transactionManager.fetchData();
+        let transactionManager = null;
+        if (transactionsData[transactionId]) {
+          transactionManager = DBManager.getTransactionManager(transactionId, transactionsData[transactionId]);
+        } else {
+          transactionManager = DBManager.getTransactionManager(transactionId);
+          await transactionManager.fetchData();
+          const newData = { ...transactionsData };
+          newData[transactionId] = transactionManager.data;
+          setTransactionsData(newData);
+        }
         newTransactionManagers.push(transactionManager);
       }
       setGroupTransactions(newTransactionManagers);
     }
 
     fetchGroupData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
   function renderHistory() {
@@ -268,24 +307,27 @@ export function GroupDetail() {
       }
 
       if (groupTransaction) {
-        return (
-          <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
-            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-              <div className="d-flex flex-column align-items-left w-100">
-                <div className="d-flex flex-row align-items-center gap-10">
-                  <h2>
-                    { transaction.data.title }
-                  </h2>
+        if (search.length === 0 || transaction.data.title.toLowerCase().includes(search.toLowerCase())) {
+          return (
+            <OutlinedCard onClick={handleClick} hoverHighlight={true} key={index}>
+              <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+                <div className="d-flex flex-column align-items-left w-100">
+                  <div className="d-flex flex-row align-items-center gap-10">
+                    <h2>
+                      { transaction.data.title }
+                    </h2>
+                  </div>
+                  <p>{getDateString(transaction.data.date)}</p>
                 </div>
-                <p>{getDateString(transaction.data.date)}</p>
+                <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                  <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                  <AvatarStack size={40} ids={getIds()} max={8} />
+                </section>
               </div>
-              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
-                <BalanceLabel groupId={groupId} transaction={transaction.data} />
-                <AvatarStack size={40} ids={getIds()} max={8} />
-              </section>
-            </div>
-          </OutlinedCard>
-        )
+            </OutlinedCard>
+          )
+
+        }
       }
 
       function renderStar() {
@@ -299,45 +341,35 @@ export function GroupDetail() {
       }
 
       if (privateTransaction) {
-        return (
-          <OutlinedCard onClick={handleClick} backgroundColor="#f0f0f0" hoverHighlight={true} key={index}>
-            <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
-              <div className="d-flex flex-column align-items-left w-100">
-                <div className="d-flex flex-row align-items-center gap-10">
-                  <Tooltip title="This transaction didn't happen within the context of this group. It does, however, effect your debt with someone in it. Only you two can see this transaction." >
-                    <VisibilityOffIcon />
-                  </Tooltip>
-                  <h2>
-                    { transaction.data.title }
-                  </h2>
+        if (search.length === 0 || transaction.data.title.toLowerCase().includes(search.toLowerCase())) {
+          return (
+            <OutlinedCard onClick={handleClick} backgroundColor="#f0f0f0" hoverHighlight={true} key={index}>
+              <div className="w-100 px-3 mt-3 mb-3 d-flex flex-row align-items-center justify-content-between history-card">
+                <div className="d-flex flex-column align-items-left w-100">
+                  <div className="d-flex flex-row align-items-center gap-10">
+                    <Tooltip title="This transaction didn't happen within the context of this group. It does, however, effect your debt with someone in it. Only you two can see this transaction." >
+                      <VisibilityOffIcon />
+                    </Tooltip>
+                    <h2>
+                      { transaction.data.title }
+                    </h2>
+                  </div>
+                  <p>{getDateString(transaction.data.date)}</p>
                 </div>
-                <p>{getDateString(transaction.data.date)}</p>
+                <section className="d-flex flex-column align-items-center justify-content-right gap-10">
+                  <div className="d-flex flex-row gap-10 align-items-center">
+                    <BalanceLabel groupId={groupId} transaction={transaction.data} />
+                    { renderStar() }
+                  </div>
+                  <AvatarStack size={40} ids={getIds()} max={8} />
+                </section>
               </div>
-              <section className="d-flex flex-column align-items-center justify-content-right gap-10">
-                <div className="d-flex flex-row gap-10 align-items-center">
-                  <BalanceLabel groupId={groupId} transaction={transaction.data} />
-                  { renderStar() }
-                </div>
-                <AvatarStack size={40} ids={getIds()} max={8} />
-              </section>
-            </div>
-          </OutlinedCard>
-        )
+            </OutlinedCard>
+          )
+        }
       }
     })
 
-  }
-
-  function renderButtons() {
-    const showButtons = false;
-    if (showButtons) {
-      return (      
-        <section className="d-flex flex-row justify-content-between w-50 gap-10">
-          <Button className="w-100" variant="contained">Settle</Button>
-          <Button className="w-100 text-light" variant="contained" color="venmo">Venmo</Button>
-        </section>
-      )
-    }
   }
 
   function handleDelete() {
@@ -347,15 +379,23 @@ export function GroupDetail() {
 
   return (
     <div className="d-flex flex-column align-items-center">
-      <section className="d-flex flex-column align-items-center m-5 gap-10">
+      <section className="d-flex flex-column align-items-center gap-10">
         <AvatarStack ids={groupData.users} size={100}/>
         <h1>{groupData.name}</h1>
         <BalanceLabel groupBalances={groupData.balances} size="large" />
         <EmojiBalanceBar groupBalances={groupData.balances} size="large"/>
         <Button color="error" variant="outlined" onClick={handleDelete}>Delete Group</Button>
       </section>
-      { renderButtons() }
-      <section className="d-flex flex-column align-items-center m-5 gap-10 w-75">
+      <section className="d-flex flex-column align-items-center gap-10 w-75">
+        <TextField 
+          variant="standard"
+          placeholder="Search transcations..."
+          onChange={(e) => setSearch(e.target.value)}
+          InputProps={{
+            startAdornment: <InputAdornment position="end">
+              <SearchIcon />
+            </InputAdornment>,
+          }} />
         { renderHistory() }
       </section>
     </div>

@@ -24,12 +24,17 @@ export class CurrencyManager {
         }
     }
 
-    static formatUSD(num) {
+    static formatUSD(num, absoluteValue) {
         const formatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD'
         })
-        return formatter.format(num);
+
+        if (!absoluteValue) {
+            return `${num > 0 ? "+" : ""}${formatter.format(num)}`;
+        }
+        return formatter.format(Math.abs(num));
+
     }
 
     static getCurrencyName(currency, plural) {

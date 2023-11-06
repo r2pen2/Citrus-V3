@@ -106,9 +106,6 @@ export function UserTopbar() {
         photoUrl: url,
         initials: userInitials
       });
-      // Cache/update these just in case we need them again soon
-      SessionManager.setPfpUrl(url);
-      SessionManager.setDisplayName(name);
     }
     fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps

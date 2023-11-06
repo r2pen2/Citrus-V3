@@ -22,7 +22,7 @@ export default function LoginHome() {
   async function handleSignIn() {
     signInWithGoogle().then(async (newUser) => {
         // Set session details
-        SessionManager.setUser(newUser);
+        SessionManager.setCurrentUser(newUser);
 
         // Create object manager for new user
         // We're not trying to get a UserManager from LocalStorage becuase we know that the user was signed out before this moment
@@ -39,12 +39,11 @@ export default function LoginHome() {
           userManager.setCreatedAt(new Date());
           userManager.setDisplayName(newUser.displayName);
           userManager.setEmail(newUser.email);
-          userManager.setPfpUrl(newUser.photoURL);
+          userManager.setPfpUrl(newUser.photoURL ? newUser.photoURL : "https://robohash.org/" + newUser.uid);
           userManager.setPhoneNumber(null) // We don't know phone number bc we're logging in with google instead
         }
         userManager.push().then(() => {
           // Save this UserManager to localstorage and redirect to dashboard
-          SessionManager.setCurrentUserManager(userManager);
           RouteManager.redirect("/dashboard");
         })
     });

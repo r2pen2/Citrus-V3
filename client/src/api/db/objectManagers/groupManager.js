@@ -3,14 +3,19 @@ import { RouteManager } from "../../routeManager";
 import { capitalizeFirstLetter } from "../../strings";
 import { ObjectManager } from "./objectManager";
 import { InviteType, InviteMethod } from "./invitationManager";
+import { SessionManager } from "../../sessionManager";
 
 /**
  * Object Manager for groups
  */
 export class GroupManager extends ObjectManager {
 
-    constructor(_id) {
+    constructor(_id, _data) {
         super(DBManager.objectTypes.GROUP, _id);
+        if (_data) {
+            this.data = _data;
+            this.fetched = true;
+        }
     }
 
     fields = {

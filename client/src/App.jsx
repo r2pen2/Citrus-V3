@@ -10,19 +10,22 @@ import "./assets/style/colors.css";
 import { ThemeProvider } from "@mui/material";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { NotificationContainer } from 'react-notifications';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Component Imports
 import Login from "./components/login/Login";
 import Dashboard from "./components/dashboard/Dashboard";
 import Topbar from "./components/topbar/Topbar";
 import HomePage from "./components/homePage/HomePage";
-import UserPage from "./components/userPage/UserPage";
 import InviteHandler from "./components/inviteHandler/InviteHandler";
 
 // API imports
 import { SessionManager } from "./api/sessionManager";
 import { auth } from "./api/firebase";
+
+export const UsersContext = React.createContext();
+export const GroupsContext = React.createContext();
+export const TransactionsContext = React.createContext();
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -35,9 +38,7 @@ function App() {
     auth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
         // Set session details
-        SessionManager.setUser(authUser);
-        SessionManager.setPfpUrl(authUser.photoURL);
-        SessionManager.setDisplayName(authUser.displayName);
+        SessionManager.setCurrentUser(authUser);
 
         // Sync user's DB doc
         const userAlreadyExists = await currentUserManager.documentExists();
@@ -54,20 +55,29 @@ function App() {
     })
   }, []);
 
+  const [usersData, setUsersData] = useState({});
+  const [transactionsData, setTransactionsData] = useState({});
+  const [groupsData, setGroupsData] = useState({});
+
   // I present to you: Citrus Financial
   return (
     <div className="app" data-testid="app-wrapper">
       <Router>
         <ThemeProvider theme={theme}>
+        <UsersContext.Provider value={{usersData, setUsersData}} >
+        <TransactionsContext.Provider value={{transactionsData, setTransactionsData}} >
+        <GroupsContext.Provider value={{groupsData, setGroupsData}} >
           <Topbar/>
-            <Routes>
-              <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
-              <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
-              <Route path="/login/*" element={<Login/>} />
-              <Route path="/dashboard/*" element={<Dashboard/>} />
-              <Route path="/user/*" element={<UserPage/>}/>
-              <Route path="/invite" element={<InviteHandler />} />
-            </Routes>
+          <Routes>
+            <Route path="*" element={skipHomePage ? <Login /> : <HomePage />} />
+            <Route path="/home" element={skipHomePage ? <Login /> : <HomePage />} />
+            <Route path="/login/*" element={<Login/>} />
+            <Route path="/dashboard/*" element={<Dashboard/>} />
+            <Route path="/invite" element={<InviteHandler />} />
+          </Routes>
+        </GroupsContext.Provider>
+        </TransactionsContext.Provider>
+        </UsersContext.Provider>
         </ThemeProvider>
         <NotificationContainer />
         <div id="recaptcha-container"></div>

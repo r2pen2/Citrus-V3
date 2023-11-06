@@ -1,6 +1,6 @@
 // Library imports
 import { useState, useEffect } from 'react';
-import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea } from '@mui/material';
+import { Button, Select, Dialog, ToggleButton, ToggleButtonGroup, MenuItem, FormGroup, TextField, FormControlLabel, Checkbox, CardActionArea, Switch, Skeleton } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -20,6 +20,8 @@ import { DBManager } from "../../../api/db/dbManager";
 import { UserRelationHistory } from "../../../api/db/objectManagers/userManager";
 import { AvatarIcon, AvatarStack } from '../../resources/Avatars';
 import { sortByDisplayName, placeCurrentUserFirst } from '../../../api/sorting';
+import { useContext } from 'react';
+import { UsersContext, GroupsContext } from '../../../App';
 
 const currentUserManager = SessionManager.getCurrentUserManager();
 
@@ -60,9 +62,14 @@ export default function NewTransaction(props) {
 }
 
 function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
+
+    const { usersData, setUsersData } = useContext(UsersContext);
+    const { groupsData, setGroupsData } = useContext(GroupsContext);
     
     const [userData, setUserData] = useState({
-        recents: [],
+        fetched: false,
+        friendIds: usersData[SessionManager.getUserId()] ? usersData[SessionManager.getUserId()].friends : [],
+        groupIds: usersData[SessionManager.getUserId()] ? usersData[SessionManager.getUserId()].groups : [],
         groups: [],
         friends: []
     });
@@ -72,25 +79,55 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     useEffect(() => {
         async function fetchUserData() {
-            let friendIds = await currentUserManager.getFriends();
-            let groupIds = await currentUserManager.getGroups();
+            let friendIds, groupIds = null;
+            if (usersData[SessionManager.getUserId()]) {
+                friendIds = usersData[SessionManager.getUserId()].friends;
+                groupIds = usersData[SessionManager.getUserId()].groups;
+            } else {
+                friendIds = await currentUserManager.getFriends();
+                groupIds = await currentUserManager.getGroups();
+                const newData = { ...usersData };
+                newData[SessionManager.getUserId()] = currentUserManager.data;
+                setUsersData(newData);
+            }
             let newFriends = [];
             for (const friendId of friendIds) {
-                const friendUserManager = DBManager.getUserManager(friendId);
-                let friendName = await friendUserManager.getDisplayName();
-                let friendPhoto = await friendUserManager.getPfpUrl();
+                let friendName, friendPhoto = null;
+                if (usersData[friendId]) {
+                    friendName = usersData[friendId].personalData.displayName;
+                    friendPhoto = usersData[friendId].personalData.pfpUrl;
+                } else {
+                    const friendUserManager = DBManager.getUserManager(friendId);
+                    friendName = await friendUserManager.getDisplayName();
+                    friendPhoto = await friendUserManager.getPfpUrl();
+                    const newData = { ...usersData };
+                    newData[friendId] = friendUserManager.data;
+                    setUsersData(newData);
+                }
                 newFriends.push({id: friendId, displayName: friendName, pfpUrl: friendPhoto, checked: false});
             }
             let newGroups = [];
             for (const groupId of groupIds) {
-                const groupUserManager = DBManager.getGroupManager(groupId);
-                let groupName = await groupUserManager.getName();
-                let groupMemberCount = await groupUserManager.getMemberCount();
-                let groupMembers = await groupUserManager.getUsers();
+                let groupName, groupMemberCount, groupMembers = null;
+                if (groupsData[groupId]) {
+                    groupName = groupsData[groupId].name;
+                    groupMemberCount = groupsData[groupId].users.length;
+                    groupMembers = groupsData[groupId].users;
+                } else {
+                    const groupUserManager = DBManager.getGroupManager(groupId);
+                    groupName = await groupUserManager.getName();
+                    groupMemberCount = await groupUserManager.getMemberCount();
+                    groupMembers = await groupUserManager.getUsers();
+                    const newData = { ...groupsData };
+                    newData[groupId] = groupUserManager.data;
+                    setGroupsData(newData);
+                }
                 newGroups.push({id: groupId, name: groupName, memberCount: groupMemberCount, members: groupMembers});
             }
             setUserData({
-                recents: userData.recents,
+                fetched: true,
+                friendIds: userData.friendIds,
+                groupIds: userData.groupIds,
                 groups: newGroups,
                 friends: newFriends,
             })
@@ -99,10 +136,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
         fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    function renderRecents() {
-        return <div></div>
-    }
 
     function handleGroupCheckbox(e, id) {
         e.preventDefault();
@@ -116,6 +149,11 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
 
     function renderGroups() {
+        if (!userData.fetched) {
+            return userData.groupIds.map(group => {
+                return <Skeleton key={group} variant="rounded" height={70} className="skeleton-round mb-2" />
+            })
+        }
         return userData.groups.map(group => {
             return (
                 <OutlinedCard key={"group-" + group.id} backgroundColor={(!checkedGroup || checkedGroup === group.id) ? (checkedGroup === group.id ? "#BFD67955" : "white") : "lightgray"}>
@@ -156,13 +194,18 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     }
     
     function renderFriends() {
+        if (!userData.fetched) {
+            return userData.friendIds.map(friend => {
+                return <Skeleton key={friend} variant="rounded" height={70} className="skeleton-round mb-2" />
+            })
+        }
         return userData.friends.map(friend => {
             return (
                 <OutlinedCard key={"friend-" + friend.id} backgroundColor={(!checkedGroup) ? (checkedFriends.includes(friend.id) && !checkedGroup ? "#BFD67955" : "white") : "lightgray"}>
                     <CardActionArea onClick={e => handleFriendCheckbox(e, friend.id)} >
                         <div className="d-flex flex-row justify-content-between m-2">
                             <div className="d-flex flex-row align-items-center gap-10">
-                                <AvatarIcon displayName={friend.displayName} src={friend.pfpUrl}/>
+                                <AvatarIcon id={friend.id}/>
                                 <div>{friend.displayName}</div>
                             </div>
                             <Checkbox disabled={checkedGroup !== null} checked={checkedFriends.includes(friend.id) && !checkedGroup} icon={<AddCircleOutlineIcon />} checkedIcon={<AddCircleIcon />} />
@@ -181,9 +224,18 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
                 if (groupData.id === checkedGroup) {
                     // Get user info
                     for (const groupMemberId of groupData.members) {
-                        const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
-                        let displayName = await groupMemberUserManager.getDisplayName();
-                        let pfpUrl = await groupMemberUserManager.getPfpUrl();
+                        let displayName, pfpUrl = null;
+                        if (usersData[groupMemberId]) {
+                            displayName = usersData[groupMemberId].personalData.displayName;
+                            pfpUrl = usersData[groupMemberId].personalData.pfpUrl;
+                        } else {
+                            const groupMemberUserManager = DBManager.getUserManager(groupMemberId);
+                            displayName = await groupMemberUserManager.getDisplayName();
+                            pfpUrl = await groupMemberUserManager.getPfpUrl();
+                            const newData = { ...usersData };
+                            newData[groupMemberId] = groupMemberUserManager.data;
+                            setUsersData(newData);
+                        }
                         newUsersList.push({id: groupMemberId, displayName: displayName, pfpUrl: pfpUrl, paidByManualAmount: null, splitManualAmount: null});
                     }
                 }
@@ -212,8 +264,6 @@ function UsersPage({newTransactionState, setNewTransactionState, nextPage}) {
     return (
         <div className="d-flex flex-column w-100 align-items-center gap-10">
             <div className="vh-60 w-100">
-                <SectionTitle title="Recent"/>
-                { renderRecents() }
                 <SectionTitle title="Groups"/>
                 { renderGroups() }
                 <SectionTitle title="Friends"/>
@@ -240,6 +290,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
     const [splitTab, setSplitTab] = useState("even");
     const [paidByCheckedUsers, setPaidByCheckedUsers] = useState([SessionManager.getUserId()]);
     const [splitCheckedUsers, setSplitCheckedUsers] = useState(initSplitCheckedUsers());
+    const [splitPercentages, setSplitPercentages] = useState(false);
+    const [paidPercentages, setPaidPercentages] = useState(false);
 
     function initSplitCheckedUsers() {
         let a = [];
@@ -289,11 +341,20 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 if (paidByTab === "even") {
                     // Paid by was even: If this user is one of the payers, their paidByManualAmount will be 1/n the total price
                     u.paidByManualAmount = paidByCheckedUsers.includes(u.id) ? (newTransactionState.total / paidByCheckedUsers.length) : 0;
-                } // No need for an else. If paidBy was manual, the amount is already set
+                } else {
+                    // Might be percentage split
+                    if (paidPercentages) {
+                        u.paidByManualAmount = newTransactionState.total * (u.paidByManualAmount / 100);
+                    }
+                }
                 if (splitTab === "even") {
                     // Do the same thing for split
                     u.splitManualAmount = splitCheckedUsers.includes(u.id) ? (newTransactionState.total / splitCheckedUsers.length) : 0;
-                } // Still no need for an else
+                } else {
+                    if (splitPercentages) {
+                        u.splitManualAmount = newTransactionState.total * (u.splitManualAmount / 100);
+                    }
+                }
             }
             u["delta"] = u.paidByManualAmount - u.splitManualAmount; // Add delta field 
             finalUsers.push(u); // Push user to final array
@@ -316,17 +377,24 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
               if (amtLeft > 0 && history.amount < 0) {
                 const group = history.group;
                 if (Math.abs(history.amount) > amtLeft) {
-                  // This will be the last history we look at
-                  if (group) {
-                    settleGroups[group] = settleGroups[group] ? settleGroups[group] + amtLeft : amtLeft; 
-                  }
-                  amtLeft = 0;
+                    // This will be the last history we look at
+                    if (group) {
+                        const groupManager = DBManager.getGroupManager(group);
+                        const bal = await groupManager.getUserBalance(paidByCheckedUsers[0]);
+                        const settleGroupAmt = Math.abs(bal[curr]) > amtLeft ? amtLeft : Math.abs(bal[curr]);
+                        if (bal[curr] < 0) {
+                          settleGroups[group] = settleGroups[group] ? settleGroups[group] + settleGroupAmt : settleGroupAmt; 
+                          amtLeft = 0;
+                        }
+                    }
                 } else {
-                  if (group) {
-                    const diff = history.amount < 0 ? history.amount : 0;
-                    settleGroups[group] = settleGroups[group] ? settleGroups[group] - diff : diff * -1; 
-                  }
-                  amtLeft += history.amount < 0 ? history.amount : 0;
+                    if (group) {
+                        const groupManager = DBManager.getGroupManager(group);
+                        const bal = await groupManager.getUserBalance(paidByCheckedUsers[0]);
+                        const settleGroupAmt = Math.abs(bal[curr]) > Math.abs(history.amount) ? Math.abs(history.amount) : Math.abs(bal[curr]);
+                        settleGroups[group] = settleGroups[group] ? settleGroups[group] + settleGroupAmt : settleGroupAmt;
+                        amtLeft += history.amount < 0 ? history.amount : 0;
+                    }
                 }
               }
             }   
@@ -340,6 +408,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         transactionManager.setAmount(newTransactionState.total);
         transactionManager.setTitle(newTransactionTitle);
         transactionManager.setGroup(newTransactionState.group);
+        transactionManager.setIsIOU(isIOU);
 
         if (isIOU) {
             // Add settle Groups
@@ -396,10 +465,12 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
             }
         }
 
-        let success = true;
         for (const key of Object.entries(userManagers)) {
-            const pushed = await key[1].push();
-            success = (success && pushed);
+            if (key[0] === SessionManager.getUserId()) {
+                await key[1].push();
+            } else {
+                key[1].push();
+            }
         }
 
         const currencyKey = currencyState.legal ? currencyState.legalType : currencyState.emojiType;
@@ -413,8 +484,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 userBal[currencyKey] = userBal[currencyKey] ? userBal[currencyKey] + user.delta : user.delta;
                 groupManager.updateBalance(user.id, userBal);
             }
-            const pushed = await groupManager.push();
-            success = (success && pushed);
+            groupManager.push();
         }
 
         if (isIOU) {
@@ -427,15 +497,11 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 groupManager.updateBalance(paidByCheckedUsers[0], fromBal);
                 groupManager.updateBalance(splitCheckedUsers[0], toBal);
                 groupManager.addTransaction(transactionManager.documentId);
-                const pushed = await groupManager.push();
-                success = (success && pushed);
+                groupManager.push();
             }
         }
 
-        if (success) {
-            RouteManager.redirectToTransaction(transactionManager.documentId);
-        }
-        
+        RouteManager.redirectToTransaction(transactionManager.documentId);
     }
 
     function populateCurrencyTypeSelect() {
@@ -480,8 +546,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         if (newTransactionState.users.length !== splitCheckedUsers.length) {
             numberString = ` (${splitCheckedUsers.length}/${newTransactionState.users.length})`;
         }
-        if (splitTab === "manual" && getTotalSplitAmounts() !== newTransactionState.total) {
-            return "manually (!)"
+        if (splitTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total)) {
+            return "manually (!)";
         }
         return splitTab === "even" ? `evenly${numberString}` : `manually${numberString}`;
     }
@@ -516,6 +582,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function formatTotalPaidByAmounts() {
         const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        if (paidPercentages) {
+            return getTotalPaidByAmounts() + "%";
+        }
         return `${typeString}${getTotalPaidByAmounts()}`;
     }
 
@@ -531,6 +600,9 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
 
     function formatTotalSplitAmounts() {
         const typeString = currencyState.legal ? CurrencyManager.getLegalCurrencySymbol(currencyState.legalType) : currencyState.emojiType + " x ";
+        if (splitPercentages) {
+            return getTotalSplitAmounts() + "%";
+        }
         return `${typeString}${getTotalSplitAmounts()}`;
     }
 
@@ -652,17 +724,17 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <TextField id="amount-input" type="number" label="Amount" value={user.paidByManualAmount ? user.paidByManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                        <TextField id="amount-input" type="number" label={paidPercentages ? "%" : "Amount"} value={user.paidByManualAmount ? user.paidByManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
                     </section>
                 </div>
             )
         }
 
         function getTotalWarning() {
-            if (getTotalPaidByAmounts() < newTransactionState.total) {
+            if (getTotalPaidByAmounts() < (paidPercentages ? 100 : newTransactionState.total)) {
                 return "Too low ✘"
             }
-            if (getTotalPaidByAmounts() > newTransactionState.total) {
+            if (getTotalPaidByAmounts() > (paidPercentages ? 100 : newTransactionState.total)) {
                 return "Too high ✘";
             }
             return "Good ✓";
@@ -679,6 +751,14 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
         if (paidByTab === "manual") {
             return sortedUsers.map((user, index) => {
+                if (index === 0) {
+                    return (
+                        <div key={index} className="d-flex flex-column w-100 align-items-center">
+                            <FormControlLabel control={<Checkbox checked={paidPercentages} onClick={() => setPaidPercentages(!paidPercentages)}/>}label="%" />
+                            { renderManualUser(user, index) }
+                        </div>
+                    )
+                }
                 if (index < sortedUsers.length - 1) {
                     return renderManualUser(user, index);
                 } else {
@@ -687,8 +767,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                             { renderManualUser(user, index) }
                             <div className="d-flex flex-row justify-content-end w-80">
                                 <div className="d-flex flex-column align-items-end">
-                                    <p className={"font-weight-bold " + (getTotalPaidByAmounts() !== newTransactionState.total ? "text-red" : "color-primary")}>Total: { formatTotalPaidByAmounts() }</p>
-                                    <p className={getTotalPaidByAmounts() !== newTransactionState.total ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
+                                    <p className={"font-weight-bold " + (getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary")}>Total: { formatTotalPaidByAmounts() }</p>
+                                    <p className={getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
                                 </div>
                             </div>
                         </div>
@@ -769,17 +849,17 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         </div>
                     </section>
                     <section className="d-flex flex-row justify-content-end align-items-center">
-                        <TextField id="amount-input" type="number" label="Amount" value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
+                        <TextField id="amount-input" type="number" label={splitPercentages ? "%" : "Amount"} value={user.splitManualAmount ? user.splitManualAmount : "\0"} placeholder={getTextfieldPlaceholder()} onChange={(e) => updateUserSplitManualAmount(e, user.id)} variant="standard" className="w-50"/>
                     </section>
                 </div>
             )
         }
 
         function getTotalWarning() {
-            if (getTotalSplitAmounts() < newTransactionState.total) {
+            if (getTotalSplitAmounts() < (splitPercentages ? 100 : newTransactionState.total)) {
                 return "Too low ✘"
             }
-            if (getTotalSplitAmounts() > newTransactionState.total) {
+            if (getTotalSplitAmounts() > (splitPercentages ? 100 : newTransactionState.total)) {
                 return "Too high ✘";
             }
             return "Good ✓";
@@ -796,6 +876,14 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
         }
         if (splitTab === "manual") {
             return sortedUsers.map((user, index) => {
+                if (index === 0) {
+                    return (
+                        <div key={index} className="d-flex flex-column w-100 align-items-center">
+                            <FormControlLabel control={<Checkbox checked={splitPercentages} onClick={() => setSplitPercentages(!splitPercentages)}/>}label="%" />
+                            { renderManualUser(user, index) }
+                        </div>
+                    )
+                }
                 if (index < sortedUsers.length - 1) {
                     return renderManualUser(user, index);
                 } else {
@@ -804,8 +892,8 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                             { renderManualUser(user, index) }
                             <div className="d-flex flex-row justify-content-end w-80">
                                 <div className="d-flex flex-column align-items-end">
-                                    <p className={"font-weight-bold " + (getTotalSplitAmounts() !== newTransactionState.total ? "text-red" : "color-primary")}>Total: { formatTotalSplitAmounts() }</p>
-                                    <p className={getTotalSplitAmounts() !== newTransactionState.total ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
+                                    <p className={"font-weight-bold " + (getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary")}>Total: { formatTotalSplitAmounts() }</p>
+                                    <p className={getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total) ? "text-red" : "color-primary"}>{ getTotalWarning() }</p>
                                 </div>
                             </div>
                         </div>
@@ -905,7 +993,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                 { renderIOUCheckbox() }
             </div>
 
-            <Button variant="contained" color={newTransactionState.title ? "primary" : "info"} className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)} onClick={() => submitAmount()}>Submit</Button>
+            <Button variant="contained" color={newTransactionState.title ? "primary" : "info"} className="w-50" disabled={(splitTab === "manual" && newTransactionState.total % splitCheckedUsers.length !== 0 && getTotalSplitAmounts() !== newTransactionState.total) || (!newTransactionState.total) || (paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total))} onClick={() => submitAmount()}>Submit</Button>
             
             <Dialog disableEscapeKeyDown fullWidth maxWidth="sm" open={paidByDialogOpen} keepMounted onClose={(e, r) => handlePaidByDialogClose(e, r)} aria-describedby="alert-dialog-slide-description">
                 <div className="px-3 py-3 gap-10">
@@ -923,7 +1011,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         { renderPaidByTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total) || (newTransactionState.total % paidByCheckedUsers.length !== 0 && !currencyState.legal)}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handlePaidByDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== (paidPercentages ? 100 : newTransactionState.total)) || (paidByTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total)) || (newTransactionState.total % paidByCheckedUsers.length !== 0 && !currencyState.legal)}>Next</Button>
                     </section>
                 </div>
             </Dialog>
@@ -944,7 +1032,7 @@ function AmountPage({newTransactionState, setNewTransactionState, nextPage}) {
                         { renderSplitTab() }
                     </section>
                     <section className="d-flex flex-column align-items-center justify-content-center">
-                        <Button variant="contained" onClick={(e, r) => handleSplitDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalPaidByAmounts() !== newTransactionState.total)}>Next</Button>
+                        <Button variant="contained" onClick={(e, r) => handleSplitDialogClose(e, r)} disabled={(paidByTab === "even" && paidByCheckedUsers.length < 1) || (paidByTab === "manual" && getTotalSplitAmounts() !== (splitPercentages ? 100 : newTransactionState.total))}>Next</Button>
                     </section>
                 </div>
             </Dialog>

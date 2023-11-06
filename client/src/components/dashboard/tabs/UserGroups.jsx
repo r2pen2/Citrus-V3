@@ -1,43 +1,79 @@
 import { Breadcrumbs } from "../../resources/Navigation";
-import { UserRelation } from "../../../api/db/objectManagers/userManager";
-import { useState, useEffect } from "react";
-import { SortSelector } from "../../resources/Misc"; 
+import { useState, useEffect, useContext } from "react";
 import { SectionTitle } from "../../resources/Labels"; 
-import { GroupsList } from "../../resources/Groups"; 
+import { GroupDetail, GroupsList } from "../../resources/Groups"; 
 import { SessionManager } from "../../../api/sessionManager";
 import { DBManager } from "../../../api/db/dbManager";
-import { CircularProgress, Button } from "@mui/material";
+import { Button } from "@mui/material";
+
+import { GroupCardSkeleton } from "../../resources/Groups"
+import { GroupsContext, UsersContext } from "../../../App";
 
 export default function UserGroups() {
   
-  const [sortingScheme, setSortingScheme] = useState(UserRelation.sortingSchemes.BALANCE);
-  const [groupManagers, setGroupManagers] = useState({managers: [], fetched: false});
+  const { groupsData, setGroupsData } = useContext(GroupsContext);
+  const { usersData, setUsersData } = useContext(UsersContext);
 
-  const currentUserManager = SessionManager.getCurrentUserManager();
+  const [groupState, setGroupState] = useState({
+    ids: usersData[SessionManager.getUserId()] ? usersData[SessionManager.getUserId()].groups : [],
+    managers: [],
+    fetched: false
+  });
   
+  const [focusedGroup, setFocusedGroup] = useState(null);
+
   useEffect(() => {
-    async function fetchRelations() {
-        const userGroups = await currentUserManager.getGroups();
-        let newGroupManagers = [];
+    async function fetchGroups() {
+      // Fetch user related data
+      let newGroupManagers = [];
+      let userGroups = [];
+      if (usersData[SessionManager.getUserId()]) {
+        userGroups = usersData[SessionManager.getUserId()].groups;
+      } else {
+        const userManager = SessionManager.getCurrentUserManager();
+        userGroups = await userManager.getGroups();
+        const newData = { ...usersData };
+        newData[SessionManager.getUserId()] = userManager.data;
+        setUsersData(newData);
+      }
+
+
+      // Fetch data related to user's groups
         for (const groupId of userGroups) {
-          const groupManager = DBManager.getGroupManager(groupId);
-          await groupManager.fetchData();
+          let groupManager = null;
+          if (groupsData[groupId]) {
+            groupManager = DBManager.getGroupManager(groupId, groupsData[groupId]);
+          } else {
+            groupManager = DBManager.getGroupManager(groupId);
+            await groupManager.fetchData();
+            const newData = { ...groupsData };
+            newData[groupId] = groupManager.data;
+            setGroupsData(newData);
+          }
           newGroupManagers.push(groupManager);
         }
-        setGroupManagers({managers: newGroupManagers, fetched: true});
+        setGroupState({ids: groupState.ids, managers: newGroupManagers, fetched: true});
     }
-    fetchRelations();
+    fetchGroups();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
+  function renderSkeleton() {
+    return groupState.ids.map((id) => {
+      return <GroupCardSkeleton key={id} />
+    })
+  }
+
+  function getBreadcrumbPath() {
+    return `Dashboard/Groups${focusedGroup && groupsData[focusedGroup] ? "/" + groupsData[focusedGroup].name : ""}`
+  }
+
   return (
     <div className="d-flex flex-column gap-10">
-      <Breadcrumbs path="Dashboard/Groups" />
-      <SortSelector setSortingScheme={setSortingScheme} sortingScheme={sortingScheme}/>
-      <SectionTitle title="Groups">
-        <Button variant="contained" onClick={() => window.location = "/dashboard/group/add"}>Add Groups</Button>
-      </SectionTitle>
-      { groupManagers.fetched ? <GroupsList groupManagers={groupManagers.managers} /> : <section className="d-flex flex-row justify-content-center w-100 align-items-center"><CircularProgress/></section> }
+      <Breadcrumbs path={getBreadcrumbPath()} />
+      { !focusedGroup && <SectionTitle title="Groups"><Button variant="contained" onClick={() => window.location = "/dashboard/group/add"}>Add Groups</Button></SectionTitle>}
+      { !focusedGroup && (groupState.fetched ? <GroupsList groupManagers={groupState.managers} setFocusedGroup={setFocusedGroup} /> : renderSkeleton()) }
+      { focusedGroup && <GroupDetail groupId={focusedGroup} /> }
     </div>
   );
 }

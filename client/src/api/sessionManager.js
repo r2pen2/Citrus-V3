@@ -17,15 +17,25 @@ export class SessionManager {
      * Get user object saved in localStorage
      * @returns user object or null
      */
-    static getUser() {
-        return JSON.parse(localStorage.getItem("citrus:user"));
+    static getCurrentUser() {
+        return JSON.parse(localStorage.getItem("citrus:currentUser"));
     }
 
     /**
      * Set user object saved in localStorage
      */
-    static setUser(user) {
-        localStorage.setItem("citrus:user", JSON.stringify(user));
+    static setCurrentUser(user) {
+        localStorage.setItem("citrus:currentUser", JSON.stringify(user));
+    }
+
+    static getCurrentUserGroups() {
+        const man = this.getCurrentUserManager();
+        return man.data.groups;
+    }
+
+    static getCurrentUserFriends() {
+        const man = this.getCurrentUserManager();
+        return man.data.friends;
     }
 
     /**
@@ -34,6 +44,10 @@ export class SessionManager {
      */
     static getCurrentUserManager() {
         const id = this.getUserId(); // Get user ID from LS
+        const savedUsers = this.getUserData();
+        if (Object.keys(savedUsers).includes(id)) {
+            return DBManager.createUserManagerFromLocalStorage(id, savedUsers[id]);
+        }
         if (id) {
             return DBManager.getUserManager(id);
         }
@@ -46,7 +60,7 @@ export class SessionManager {
      * @returns user id or null
      */
     static getUserId() {
-        const user = JSON.parse(localStorage.getItem("citrus:user"));
+        const user = JSON.parse(localStorage.getItem("citrus:currentUser"));
         return user ? user.uid : null;
     }
 
@@ -55,14 +69,7 @@ export class SessionManager {
      * @returns profile picture URL or empty string
      */
     static getPfpUrl() {
-        return localStorage.getItem("citrus:pfpUrl") ? localStorage.getItem("citrus:pfpUrl") : "";
-    }
-
-    /**
-     * Set profile picture URL saved in localStorage
-     */
-    static setPfpUrl(pfpUrl) {
-        localStorage.setItem("citrus:pfpUrl", pfpUrl);
+        return localStorage.getItem("citrus:currentUser") ? JSON.parse(localStorage.getItem("citrus:currentUser")).photoURL : "";
     }
 
     /**
@@ -70,14 +77,7 @@ export class SessionManager {
      * @returns display name or empty string
      */
     static getDisplayName() {
-        return localStorage.getItem("citrus:displayName") ? localStorage.getItem("citrus:displayName") : "";
-    }
-
-    /**
-     * Set display name saved in localStorage
-     */
-    static setDisplayName(displayName) {
-        localStorage.setItem("citrus:displayName", displayName);
+        return localStorage.getItem("citrus:currentUser") ? JSON.parse(localStorage.getItem("citrus:currentUser")).displayName : "";
     }
 
     /**
@@ -115,17 +115,15 @@ export class SessionManager {
      * @returns whether or not there is a user stored in LS
      */
     static userInLS() {
-        return localStorage.getItem("citrus:user") ? true : false;
+        return localStorage.getItem("citrus:currentUser") ? true : false;
     }
-
-
 
     /**
      * Checks whether a user is completely signed in based on whether or not they have a display name
      * @returns whether or not the user has completed signin process
      */
     static userFullySignedIn() {
-        const user = SessionManager.getUser();
+        const user = SessionManager.getCurrentUser();
         if (user) {
             if (user.displayName === null) {
               return false;
@@ -141,10 +139,13 @@ export class SessionManager {
      * Clear all citrus related localstorage keys
      */
     static clearLS() {
-        localStorage.removeItem("citrus:user");
+        localStorage.removeItem("citrus:currentUser");
         localStorage.removeItem("citrus:debug");
         localStorage.removeItem("citrus:pfpUrl");
         localStorage.removeItem("citrus:displayName");
+        localStorage.removeItem("citrus:userData");
+        localStorage.removeItem("citrus:groupsData"); 
+        localStorage.removeItem("citrus:transactionsData"); 
     }
 
     /**
@@ -159,6 +160,9 @@ export class SessionManager {
             displayName: this.getDisplayName(),
             debugMode: this.getDebugMode(),
             userId: this.getUserId(),
+            userData: this.getUserData(),
+            transactionsData: this.getTransactionsData(),
+            groupsData: this.getGroupsData(),
         }
     }
 
@@ -169,5 +173,79 @@ export class SessionManager {
         signOutUser().then(() => {
             RouteManager.redirect("/home");
         });
+    }
+    
+    static getTransactionsData() {
+        return localStorage.getItem("citrus:transactionsData") ? JSON.parse(localStorage.getItem("citrus:transactionsData")) : {};
+    }
+    
+    static getGroupsData() {
+        return localStorage.getItem("citrus:groupsData") ? JSON.parse(localStorage.getItem("citrus:groupsData")) : {};
+    }
+
+    static getUserData() {
+        return localStorage.getItem("citrus:userData") ? JSON.parse(localStorage.getItem("citrus:userData")) : {};
+    }
+
+    static saveUserData(userManager) {
+        // We have to be a little more careful about what kind of user data we're saving to LS becuase users can see everything if they dig :(
+        const userId = userManager.documentId;
+        const userData = userManager.data;
+        const map = this.getUserData();
+        if (userId === this.getUserId()) {
+            map[userId] = userData;
+        } else {
+            // This isn't current user, so we should remove some (most) information
+            console.log(userData);
+            const obfuscatedUserData = {
+                personalData: {
+                    displayName: userData.personalData.displayName,
+                    pfpUrl: userData.personalData.pfpUrl ? userData.personalData.pfpUrl : "https://robohash.org/" + userId,
+                }
+            }
+            map[userId] = obfuscatedUserData;
+        }
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:userData", string);
+    }
+
+    static saveGroupData(groupManager) {
+        const groupId = groupManager.documentId;
+        const groupData = groupManager.data;
+        const map = this.getGroupsData();
+        map[groupId] = groupData;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:groupsData", string); 
+    }
+
+    static getGroupData(groupId) {
+        const map = this.getGroupsData();
+        return map[groupId] ? map[groupId] : null;
+    }
+
+    static saveTransactionData(transactionManager) {
+        const transactionId = transactionManager.documentId;
+        const transactionData = transactionManager.data;
+        const map = this.getTransactionsData();
+        map[transactionId] = transactionData;
+        const string = JSON.stringify(map);
+        localStorage.setItem("citrus:transactionsData", string); 
+    }
+
+    static getTransactionData(transactionId) {
+        const map = this.getTransactionsData();
+        return map[transactionId] ? map[transactionId] : null;
+    }
+
+    static getSavedUser(id) {
+        return Object.keys(this.getUserData()).includes(id) ? this.getUserData()[id] : null;
+    }
+
+    static getSavedGroup(id) {
+        return Object.keys(this.getGroupsData()).includes(id) ? this.getGroupsData()[id] : null;
+    }
+
+    static getSavedTransaction(id) {
+        return Object.keys(this.getTransactionsData()).includes(id) ? this.getTransactionsData()[id] : null;
     }
 }
